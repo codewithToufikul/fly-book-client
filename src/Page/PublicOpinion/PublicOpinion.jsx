@@ -1,0 +1,199 @@
+import React, { useEffect, useState } from "react";
+import Navbar from "../../Components/Navbar/Navbar";
+import DownNav from "../../Components/DownNav/DownNav";
+import Categories from "../../Components/Categories/Categories";
+import HomeLeft from "../../Components/HomeLeft/HomeLeft";
+import usePublicAxios from "../../Hooks/usePublicAxios";
+import heartfill from "../../assets/heart.png";
+import toast from "react-hot-toast";
+import useUser from "../../Hooks/useUser";
+import { FaRegHeart } from "react-icons/fa";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
+
+const PublicOpinion = () => {
+  const { user } = useUser();
+  const token = localStorage.getItem("token");
+  const axiosPublic = usePublicAxios();
+  const [expandedPosts, setExpandedPosts] = useState({});
+
+  const toggleExpand = (id) => {
+    setExpandedPosts((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const { isLoading, error, data, refetch } = useQuery({
+    queryKey: ["postsData"], // Unique key for the query
+    queryFn: () =>
+      axiosPublic.get("/opinion/posts").then((res) => res.data.data), // Use res.data.data for success response
+  });
+
+  const handlePostLike = async (postId) => {
+    try {
+      const response = await axiosPublic.post(
+        "/opinion/like",
+        { postId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Post liked successfully.");
+        refetch();
+      } else {
+        toast.error("Failed to like the post:", response.data.error);
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  };
+
+  const handleUnlike = async (postId) => {
+    try {
+      const response = await axiosPublic.post(
+        "/opinion/unlike",
+        { postId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Post unlike successfully.");
+        refetch();
+      } else {
+        toast.error("Failed to like the post:", response.data.error);
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="h-24 w-24 rounded-full border-t-8 border-b-8 border-gray-200"></div>
+          <div className="absolute top-0 left-0 h-24 w-24 rounded-full border-t-8 border-b-8 border-blue-500 animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <Navbar />
+      <div className="w-full lg:grid lg:grid-cols-3 mt-5 px-3">
+        <div>
+          <Categories />
+        </div>
+        <div className="space-y-5">
+          <div className=" space-y-5">
+            {data
+              .slice()
+              .reverse()
+              .map((post) => {
+                return (
+                  // Add the return keyword here
+                  <div
+                    key={post._id}
+                    className="card bg-gray-50 shadow-sm rounded-md"
+                  >
+                    <div className="card-body p-4">
+                      <Link to={user.id == post.userId ? `/my-profile`: `/profile/${post.userId}` } className=" flex items-center gap-3 border-b-2 pb-2 lg:pb-3 shadow-sm px-3">
+                        <div className=" lg:w-[60px] w-[50px] h-[50px] lg:h-[60px] ">
+                          <img
+                            className=" w-full h-full rounded-full object-cover "
+                            src={post.userProfileImage}
+                            alt=""
+                          />
+                        </div>
+                        <div className="">
+                          <h1 className=" text-lg lg:text-xl font-medium">
+                            {post.userName}
+                          </h1>
+                          <p className=" text-xs text-slate-400 lg:text-sm">{`${
+                            post.date
+                          } at ${
+                            post.time.slice(0, -6) + post.time.slice(-3)
+                          }`}</p>
+                        </div>
+                      </Link>
+                      <pre
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: "1rem",
+                          whiteSpace: "pre-wrap",
+                          wordWrap: "break-word",
+                        }}
+                        className="text-sm lg:text-base w-fit"
+                        onClick={() => toggleExpand(post._id)}
+                      >
+                        {expandedPosts[post._id] ? (
+                          post.description
+                        ) : (
+                          <>
+                            <span className="block sm:hidden">
+                              {post.description.slice(0, 140)}...
+                            </span>
+                            <span className="hidden sm:block">
+                              {post.description.slice(0, 220)}...
+                            </span>
+                          </>
+                        )}
+                      </pre>
+                    </div>
+                    {post.image && (
+                      <figure className="w-full h-full overflow-hidden flex justify-center items-center bg-gray-100">
+                        <img
+                          className="w-full h-full object-contain"
+                          src={post.image}
+                        />
+                      </figure>
+                    )}
+
+                    <div className="p-5 flex justify-between items-center">
+                      <div className="flex items-center gap-1">
+                        {user && post.likedBy?.includes(user.id) ? (
+                          <img
+                            onClick={() => handleUnlike(post._id)}
+                            className=" w-8 lg:w-10 mr-2 cursor-pointer"
+                            src={heartfill}
+                            alt=""
+                          />
+                        ) : (
+                          <h1
+                            onClick={() => handlePostLike(post._id)}
+                            className=" cursor-pointer text-[32px] mr-2"
+                          >
+                            <FaRegHeart />
+                          </h1>
+                        )}
+
+                        <p className=" text-sm lg:text-lg font-medium">
+                          {post.likes} Likes
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 cursor-pointer">
+                        <p className=" text-sm lg:text-lg font-medium">Share</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+        <div className="hidden lg:block">
+          <HomeLeft />
+        </div>
+      </div>
+      <div className=" mt-[50px]">
+        <DownNav />
+      </div>
+    </div>
+  );
+};
+
+export default PublicOpinion;
