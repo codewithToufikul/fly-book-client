@@ -12,25 +12,32 @@ import help from "../../assets/customer-service.png";
 import logout from "../../assets/logout.png";
 import useUser from "../../Hooks/useUser";
 import { Link, useNavigate } from "react-router";
+import toast from "react-hot-toast";
+import loadingLogo from "../../assets/load.webp"
+import near from "../../assets/near.png"
 
 const Categories = () => {
-  const { user, loading, refetch } = useUser();
+  const { user, loading: isLoading, refetch } = useUser();
   const navigate = useNavigate();
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="relative">
-          <div className="h-24 w-24 rounded-full border-t-8 border-b-8 border-gray-200"></div>
-          <div className="absolute top-0 left-0 h-24 w-24 rounded-full border-t-8 border-b-8 border-blue-500 animate-spin"></div>
+      <div className=" flex flex-col min-h-screen justify-center block lg:hidden items-center">
+        <div className=" w-[100px] lg:w-[200px]">
+          <img className=" w-full " src={loadingLogo} alt="" />
         </div>
+        <span className="loading loading-dots loading-lg"></span>
       </div>
     );
   }
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("notify")
+    localStorage.removeItem("notify");
     refetch();
+  };
+
+  const handleUpcoming = () => {
+    toast.error("Features Upcoming !");
   };
 
   return (
@@ -52,7 +59,8 @@ const Categories = () => {
           </h1>
         </Link>
       ) : (
-        <Link to={'/login'}
+        <Link
+          to={"/login"}
           type="button"
           className="text-white pb-3 bg-gradient-to-r ml-5 from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br  shadow-lg shadow-cyan-500/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
         >
@@ -72,14 +80,17 @@ const Categories = () => {
           </Link>
         </li>
         <li>
-          <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+          <Link
+            to={"my-library"}
+            className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+          >
             <div className=" w-8 ">
               <img className=" w-full" src={library} alt="" />
             </div>
             <h2 className=" text-lg font-medium">Library</h2>
-          </div>
+          </Link>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={group} alt="" />
@@ -88,14 +99,28 @@ const Categories = () => {
           </div>
         </li>
         <li>
-          <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+          <Link
+            to={"https://bookoffen.com/"}
+            className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+          >
             <div className=" w-8 ">
               <img className=" w-full" src={market} alt="" />
             </div>
             <h2 className=" text-lg font-medium">Market Place</h2>
-          </div>
+          </Link>
         </li>
         <li>
+          <Link
+            to={"/nearby-friends"}
+            className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+          >
+            <div className=" w-8 ">
+              <img className=" w-full" src={near} alt="" />
+            </div>
+            <h2 className=" text-lg font-medium">Nearby People</h2>
+          </Link>
+        </li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={elng} alt="" />
@@ -103,7 +128,7 @@ const Categories = () => {
             <h2 className=" text-lg font-medium">E-Learning</h2>
           </div>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={channel} alt="" />
@@ -111,7 +136,7 @@ const Categories = () => {
             <h2 className=" text-lg font-medium">Channels</h2>
           </div>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={audioBook} alt="" />
@@ -119,7 +144,7 @@ const Categories = () => {
             <h2 className=" text-lg font-medium">Audio Book</h2>
           </div>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={donetBook} alt="" />
@@ -127,7 +152,7 @@ const Categories = () => {
             <h2 className=" text-lg font-medium">Donate Your Book</h2>
           </div>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={breach} alt="" />
@@ -135,7 +160,7 @@ const Categories = () => {
             <h2 className=" text-lg font-medium">Breach of Contract</h2>
           </div>
         </li>
-        <li>
+        <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
             <div className=" w-8 ">
               <img className=" w-full" src={settings} alt="" />
@@ -144,12 +169,15 @@ const Categories = () => {
           </div>
         </li>
         <li>
-          <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+          <Link
+            to={"/contract-us"}
+            className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+          >
             <div className=" w-8 ">
               <img className=" w-full" src={help} alt="" />
             </div>
-            <h2 className=" text-lg font-medium">Help Center</h2>
-          </div>
+            <h2 className=" text-lg font-medium">Contract Us</h2>
+          </Link>
         </li>
         <li onClick={handleLogout}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">

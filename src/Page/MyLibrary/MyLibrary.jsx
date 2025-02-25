@@ -66,6 +66,11 @@ const addBook = async (e) => {
   e.preventDefault();
   const currentDate = new Date().toLocaleDateString();
   const currentTime = new Date().toLocaleTimeString();
+
+  if(user.verificationStatus !== true){
+    toast.error('at fast verify your face 😊')
+    return;
+  }
   // Upload image to ImgBB
   const formData = new FormData();
   formData.append("image", bookData.image);

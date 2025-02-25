@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import Navbar from "../../Components/Navbar/Navbar";
 import DownNav from "../../Components/DownNav/DownNav";
@@ -14,6 +14,14 @@ const ScearchPage = () => {
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
   const [expandedPosts, setExpandedPosts] = useState({});
+  const location = useLocation();
+  const { searchResults } = location.state || {};
+  const [users, setUsers] = useState([]);
+  const [opinions, setOpinions] = useState([]);
+  const [books, setBooks] = useState([]);
+  const [onindoBooks, setOnindoBooks] = useState([]);
+  const [pdfBooks, setPdfBooks] = useState([]);
+  const [searchCate,  setSearchCate] = useState("all")
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -31,18 +39,24 @@ const ScearchPage = () => {
       </div>
     );
   }
-  const location = useLocation();
-  const { searchResults } = location.state || {};
-  const {
-    users = [],
-    opinions = [],
-    books = [],
-    onindoBooks = [],
-  } = searchResults;
-  const peoples = users.filter((userP) => userP?._id !== user?.id);
-  const sBooks = books.filter((book) => book?.userId !== user?.id);
-  const sOpinions = opinions.filter((post) => post?.userId !== user?.id);
-  const sOnindoBooks = onindoBooks.filter((book) => book?.userId !== user?.id);
+  const fetchSearchResult=()=>{
+    if (searchResults) {
+      setUsers(searchResults.users || []);
+      setOpinions(searchResults.opinions || []);
+      setBooks(searchResults.books || []);
+      setOnindoBooks(searchResults.onindoBooks || []);
+      setPdfBooks(searchResults.pdfBooks || []);
+    }
+  }
+
+  useEffect(() => {
+    fetchSearchResult();
+  }, [searchResults]);
+  let peoples = users.filter((userP) => userP?._id !== user?.id);
+  let sBooks = books.filter((book) => book?.userId !== user?.id);
+  let sOpinions = opinions.filter((post) => post?.userId !== user?.id);
+  let sOnindoBooks = onindoBooks.filter((book) => book?.userId !== user?.id);
+  let sPdfBooks = pdfBooks.filter((book) => book?.userId !== user?.id);
 
   //   sendFriendRequest
   const sendFriendRequest = async (recipientId) => {
@@ -74,61 +88,37 @@ const ScearchPage = () => {
       toast.error("something went wrong !");
     }
   };
-
-  const handlePostLike = async (postId) => {
-    try {
-      const response = await axiosPublic.post(
-        "/opinion/like",
-        { postId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Post liked successfully.");
-        refetch();
-      } else {
-        toast.error("Failed to like the post:", response.data.error);
-      }
-    } catch (error) {
-      console.error("Error liking post:", error);
-    }
-  };
-
-  const handleUnlike = async (postId) => {
-    try {
-      const response = await axiosPublic.post(
-        "/opinion/unlike",
-        { postId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Post unlike successfully.");
-        refetch();
-      } else {
-        toast.error("Failed to like the post:", response.data.error);
-      }
-    } catch (error) {
-      console.error("Error liking post:", error);
-    }
-  };
+  const sortSearch = (category) => {
+    setSearchCate(category)
+  };  
   return (
     <div>
       <Navbar />
       <div className="container mx-auto p-4">
+        <div className=" border-b-2 pb-4 shadow-sm mb-3 ">
+          <ul className=" flex items-center justify-center lg:justify-start  gap-2">
+            <li onClick={()=>sortSearch("all")}  className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "all" ? "bg-gray-200" : ""}`}>All</li>
+            <li onClick={()=>sortSearch("peoples")}  className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "peoples" ? "bg-gray-200" : ""}`}>Peoples</li>
+            <li onClick={()=>sortSearch("books")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "books" ? "bg-gray-200" : ""}`}>Books</li>
+            <li onClick={()=>sortSearch("opinions")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "opinions" ? "bg-gray-200" : ""}`}>Opinion</li>
+            <li onClick={()=>sortSearch("onindo")} className={`text-xs lg:text-lg px-1 py-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "onindo" ? "bg-gray-200" : ""}`}>Onindo Books</li>
+            <li 
+              onClick={() => sortSearch("pdf")} 
+              className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate == "pdf" ? "bg-gray-200" : ""}`}
+            >
+              PDF Books
+            </li>
+          </ul>
+        </div>
         <h1 className="text-2xl font-bold mb-6">Search Results</h1>
 
         {/* Users Section */}
         {peoples.length > 0 && (
-          <div className="category-section mb-6 p-4 border border-gray-300 rounded-lg">
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${ searchCate !== "peoples" && searchCate !== "all" ? "hidden" : "block"}`}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Peoples
             </h2>
-            <ul>
+            <ul className=" grid grid-cols-1 lg:grid-cols-6">
               {peoples.map((userItem) => (
                 <div
                   className="lg:w-[210px] lg:h-[280px] w-full h-[120px] bg-white shadow-sm rounded-lg flex flex-row lg:flex-col items-center"
@@ -142,7 +132,10 @@ const ScearchPage = () => {
                     />
                   </div>
                   <div className=" w-full pl-3 lg:pl-0 px-1 flex flex-col lg: gap-3 justify-between pb-3">
-                    <Link to={`/profile/${userItem._id}`} className=" text-xl lg:text-[22px] font-medium lg:font-semibold text-center py-2">
+                    <Link
+                      to={`/profile/${userItem._id}`}
+                      className=" text-xl lg:text-[22px] font-medium lg:font-semibold text-center py-2"
+                    >
                       {userItem.name}
                     </Link>
                     {user.friends?.includes(userItem._id) ? (
@@ -188,7 +181,7 @@ const ScearchPage = () => {
 
         {/* Opinions Section */}
         {opinions.length > 0 && (
-          <div className="category-section mb-6 p-4 border border-gray-300 rounded-lg">
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${ searchCate !== "opinions" && searchCate !== "all" ? "hidden" : "block"}`}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Opinions
             </h2>
@@ -271,17 +264,17 @@ const ScearchPage = () => {
 
         {/* Books Section */}
         {sBooks.length > 0 && (
-          <div className="category-section mb-6 p-4 border border-gray-300 rounded-lg">
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${ searchCate !== "books" && searchCate !== "all" ? "hidden" : "block"}`}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Books</h2>
-            <ul>
+            <ul className=" grid grid-cols-2 lg:grid-cols-5 justify-center gap-2 ">
               {books.map((book, index) => (
                 <li
                   key={index}
-                  className="mb-3 text-gray-800 grid grid-cols-2 lg:grid-cols-5 justify-center"
+                  className="mb-3 text-gray-800 "
                 >
                   <div
                     key={book._id}
-                    className="flex cursor-pointer flex-col rounded overflow-hidden shadow-lg bg-white"
+                    className="flex cursor-pointer flex-col rounded overflow-hidden shadow-lg h-full bg-white"
                   >
                     <img
                       onClick={() =>
@@ -318,7 +311,12 @@ const ScearchPage = () => {
                           <span className="text-base lg:text-lg font-medium lg:font-semibold pr-2">
                             Owner:
                           </span>
-                          <Link to={`/profile/${book.userId}`} className=" hover:underline">{book.owner}</Link>
+                          <Link
+                            to={`/profile/${book.userId}`}
+                            className=" hover:underline"
+                          >
+                            {book.owner}
+                          </Link>
                         </p>
                         <p className="text-xs lg:text-sm text-gray-500 mt-2">
                           Added on: {book.currentDate}
@@ -372,23 +370,12 @@ const ScearchPage = () => {
                               {book?.returnTime}
                             </h1>
                             <div className="lg:px-6 px-2 lg:mt-3 py-4">
-                              {book.requestBy?.includes(user.id) ? (
-                                <button
-                                  onClick={() => handleRequestCancel(book._id)}
-                                  className="w-full py-2 text-sm lg:text-base px-4 bg-red-400 text-white rounded-full hover:bg-red-500"
-                                >
-                                  Cancel Request
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() =>
-                                    handleRequestBook(book._id, book.requestBy)
-                                  }
-                                  className="w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
-                                >
-                                  Request Book
-                                </button>
-                              )}
+                              <Link
+                                to={`/library/${book.userId}`}
+                                className=" btn w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
+                              >
+                                Visit Library
+                              </Link>
                             </div>
                           </div>
                         </div>
@@ -400,23 +387,12 @@ const ScearchPage = () => {
                       </div>
                     </dialog>
                     <div className="lg:px-6 px-2 py-4">
-                      {book.requestBy?.includes(user.id) ? (
-                        <button
-                          onClick={() => handleRequestCancel(book._id)}
-                          className="w-full py-2 text-sm lg:text-base px-4 bg-red-400 text-white rounded-full hover:bg-red-500"
-                        >
-                          Cancel Request
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            handleRequestBook(book._id, book.requestBy)
-                          }
-                          className="w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
-                        >
-                          Request Book
-                        </button>
-                      )}
+                      <Link
+                        to={`/library/${book.userId}`}
+                        className=" btn w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
+                      >
+                        Visit Library
+                      </Link>
                     </div>
                   </div>
                 </li>
@@ -427,14 +403,188 @@ const ScearchPage = () => {
 
         {/* Onindo Books Section */}
         {sOnindoBooks.length > 0 && (
-          <div className="category-section mb-6 p-4 border border-gray-300 rounded-lg">
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${ searchCate !== "onindo" && searchCate !== "all" ? "hidden" : "block"}`}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Onindo Books
             </h2>
-            <ul>
+            <ul className=" grid grid-cols-2 lg:grid-cols-5 justify-center gap-2 ">
               {onindoBooks.map((book, index) => (
+                <li
+                  key={index}
+                  className="mb-3 text-gray-800 "
+                >
+                  <div
+                    key={book._id}
+                    className="flex cursor-pointer flex-col rounded overflow-hidden shadow-lg h-full bg-white"
+                  >
+                    <img
+                      onClick={() =>
+                        document
+                          .getElementById(`my_modal_${book._id}`)
+                          .showModal()
+                      }
+                      className="w-full h-32 lg:h-48 object-contain"
+                      src={book.imageUrl}
+                      alt={book.bookName}
+                    />
+                    <div
+                      onClick={() =>
+                        document
+                          .getElementById(`my_modal_${book._id}`)
+                          .showModal()
+                      }
+                      className="px-3 py-2 flex flex-col flex-grow justify-between"
+                    >
+                      <div>
+                        <h2 className="text-lg lg:text-xl mt-3 font-medium lg:font-semibold text-gray-800">
+                          {book.bookName.slice(0, 27)}
+                        </h2>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-600 text-sm lg:text-base mt-2">
+                          <span className="text-base lg:text-lg font-medium lg:font-semibold pr-2">
+                            Writer:
+                          </span>
+                          {book.writer.slice(0, 27)}
+                        </p>
+                        <p className="text-gray-600 text-sm lg:text-base mt-2">
+                          <span className="text-base lg:text-lg font-medium lg:font-semibold pr-2">
+                            Owner:
+                          </span>
+                          <Link
+                            to={`/profile/${book.userId}`}
+                            className=" hover:underline"
+                          >
+                            {book.owner}
+                          </Link>
+                        </p>
+                        <p className="text-xs lg:text-sm text-gray-500 mt-2">
+                          Added on: {book.currentDate}
+                        </p>
+                      </div>
+                    </div>
+                    <dialog id={`my_modal_${book._id}`} className="modal">
+                      <div className="modal-box max-w-[700px]">
+                        <div className=" lg:grid grid-cols-2 gap-5 items-center">
+                          <div className=" border-b-2 lg:border-none pb-2 mb-2">
+                            <div className=" w-full h-[200px] lg:h-[300px] ">
+                              <img
+                                className=" w-full h-full object-contain"
+                                src={book.imageUrl}
+                                alt=""
+                              />
+                            </div>
+                            <h2 className=" text-sm font-semibold mt-2">
+                              Sort Details:{" "}
+                              <span className=" font-normal text-xs">
+                                {book.details}
+                              </span>
+                            </h2>
+                          </div>
+                          <div>
+                            <h1 className=" lg:text-2xl ">
+                              <span className=" lg:text-xl font-semibold pr-2">
+                                Book Name:
+                              </span>
+                              {book.bookName}
+                            </h1>
+                            <h1 className=" text-sm lg:text-lg mt-4 ">
+                              <span className=" lg:text-lg font-semibold pr-2">
+                                Book Writer:
+                              </span>
+                              {book.writer}
+                            </h1>
+                            <p className=" text-sm lg:text-lg text-slate-400 mt-2">
+                              <span className=" text-base lg:text-lg text-slate-700 pr-2">
+                                Added on:
+                              </span>
+                              {`${book.currentDate} at ${
+                                book.currentTime.slice(0, -6) +
+                                book.currentTime.slice(-3)
+                              }`}
+                            </p>
+                            <h1 className=" lg:text-lg text-slate-600 ">
+                              <span className=" lg:text-lg font-medium mt-2 pr-2">
+                                Return Time:
+                              </span>
+                              {book?.returnTime}
+                            </h1>
+                            <div className="lg:px-6 px-2 lg:mt-3 py-4">
+                              <Link
+                                to={`/library/${book.userId}`}
+                                className=" btn w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
+                              >
+                                Visit Library
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-action">
+                          <form method="dialog">
+                            <button className="btn">Close</button>
+                          </form>
+                        </div>
+                      </div>
+                    </dialog>
+                    <div className="lg:px-6 px-2 py-4">
+                      <Link
+                        to={`/library/${book.userId}`}
+                        className=" btn w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
+                      >
+                        Visit Library
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* PDF Books Section */}
+        {sPdfBooks.length > 0 && (
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${searchCate !== "pdf" && searchCate !== "all" ? "hidden" : "block"}`}>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">PDF Books</h2>
+            <ul className="grid grid-cols-2 lg:grid-cols-5 justify-center gap-2">
+              {pdfBooks.map((book, index) => (
                 <li key={index} className="mb-3 text-gray-800">
-                  {book.name}
+                  <div className="flex cursor-pointer flex-col rounded overflow-hidden shadow-lg h-full bg-white">
+                    <img
+                      onClick={() => document.getElementById(`my_modal_${book._id}`).showModal()}
+                      className="w-full h-32 lg:h-48 object-contain"
+                      src={book.coverUrl || book.imageUrl}
+                      alt={book.bookName}
+                    />
+                    <div className="px-3 py-2 flex flex-col flex-grow justify-between">
+                      <div>
+                        <h2 className="text-lg lg:text-xl mt-3 font-medium lg:font-semibold text-gray-800">
+                          {book.bookName.slice(0, 27)}
+                        </h2>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 text-sm lg:text-base mt-2">
+                          <span className="text-base lg:text-lg font-medium lg:font-semibold pr-2">
+                            Writer:
+                          </span>
+                          {book.writerName?.slice(0, 27)}
+                        </p>
+                        <p className="text-xs lg:text-sm text-gray-500 mt-2">
+                          Added on: {new Date(book.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="lg:px-6 px-2 py-4">
+                      <a
+                        href={book.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn w-full py-2 text-sm lg:text-base px-4 bg-blue-400 text-white rounded-full hover:bg-sky-500"
+                      >
+                        View PDF
+                      </a>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -445,7 +595,8 @@ const ScearchPage = () => {
         {peoples.length === 0 &&
           sOpinions.length === 0 &&
           sBooks.length === 0 &&
-          sOnindoBooks.length === 0 && (
+          sOnindoBooks.length === 0 &&
+          sPdfBooks.length === 0 && (
             <p className="text-gray-600">No results found for your query.</p>
           )}
       </div>

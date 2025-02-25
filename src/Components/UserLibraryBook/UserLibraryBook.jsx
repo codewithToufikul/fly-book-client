@@ -12,7 +12,7 @@ const UserLibraryBook = () => {
   const { allBooks, isLoading, refetch } = useAllBook();
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
-  const socket = io("https://fly-book-server.onrender.com");
+  const socket = io("https://api.flybook.com.bd");
 
   if (loading || isLoading) {
     return (
@@ -29,6 +29,10 @@ const UserLibraryBook = () => {
   const myBooks = userBooks.filter((book) => book.transfer !== "success");
 
   const handleRequestBook = async (bookId, request) => {
+    if(user.verificationStatus !== true){
+      toast.error('at fast verify your face 😊')
+      return;
+    }
     if(request){
       return toast.error('An user already Request for this book');
     }
@@ -100,6 +104,15 @@ const UserLibraryBook = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: userId,
+          type: "bookReqCl",
+          notifyText: "Cancel Book Request",
+          roomId: [userId],
+        });
         refetch()
       }
     } catch (error) {

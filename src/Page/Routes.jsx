@@ -34,6 +34,18 @@ import ScearchPage from "./ScearchPage/ScearchPage";
 import ChatsPage from "./ChatsPage/ChatsPage";
 import MassegeBox from "../Components/MassegeBox/MassegeBox";
 import Notifications from "./Notifications/Notifications";
+import ChatList from "./ChatList/ChatList";
+import Thesis from "./Thesis/Thesis";
+import ThesisPost from "./DashboardPages/ThesisPost";
+import ThesisRead from "./ThesisRead/ThesisRead";
+import ContractUs from "./ContractUs/ContractUs";
+import AdminPosts from "./DashboardPages/AdminPosts";
+import NearbyFriends from "./NearbyFriends/NearbyFriends";
+import PdfBook from "./PdfBook/PdfBook";
+import PdfAdd from "./DashboardPages/PdfAdd";
+import ViewPdfBook from "./ViewPdfBook/ViewPdfBook";
+import AddCategory from "./DashboardPages/AddCategory";
+import AllAdminPdfBooks from "./DashboardPages/AllAdminPdfBooks";
 
 export const router = createBrowserRouter([
     {
@@ -155,6 +167,27 @@ export const router = createBrowserRouter([
                 path: '/dashboard/add-post',
                 element: <AdminRoute><PrivateRoute><AddadminPost/></PrivateRoute></AdminRoute>
             },
+            {
+                path: '/dashboard/thesis-post',
+                element: <AdminRoute><PrivateRoute><ThesisPost/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/all-posts',
+                element: <AdminRoute><PrivateRoute><AdminPosts/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/add-category',
+                element: <AdminRoute><PrivateRoute><AddCategory/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/add-pdf',
+                element: <AdminRoute><PrivateRoute><PdfAdd/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/all-pdf-books',
+                element: <AdminRoute><PrivateRoute><AllAdminPdfBooks/></PrivateRoute></AdminRoute>
+            },
+            
         ]
     },{
         path: '/search-result',
@@ -164,6 +197,10 @@ export const router = createBrowserRouter([
         element: <PrivateRoute><ChatsPage/></PrivateRoute>,
         children: [
             {
+                path: '/chats',
+                element: <ChatList></ChatList>,
+            },
+            {
                 path: '/chats/:userId',
                 element: <PrivateRoute><MassegeBox/></PrivateRoute>
             }
@@ -171,6 +208,24 @@ export const router = createBrowserRouter([
     },{
         path: "/notifications",
         element: <PrivateRoute><Notifications/></PrivateRoute>
+    },{
+        path: "/thesis",
+        element: <Thesis/>
+    },{
+        path: '/thesis/:postId',
+        element: <ThesisRead></ThesisRead>
+    },{
+        path: '/contract-us',
+        element: <ContractUs></ContractUs>
+    },{
+        path:"/nearby-friends",
+        element: <PrivateRoute><NearbyFriends></NearbyFriends></PrivateRoute>
+    },{
+        path: "/pdf-book",
+        element: <PdfBook/>
+    },{
+        path: "/view-pdf-book/:id",
+        element: <ViewPdfBook/>
     },
     {
         path: '*',

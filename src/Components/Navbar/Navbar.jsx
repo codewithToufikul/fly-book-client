@@ -13,7 +13,7 @@ import {
   HiUserAdd,
 } from "react-icons/hi";
 import { IoNotificationsSharp } from "react-icons/io5";
-import { MdPictureAsPdf } from "react-icons/md";
+import { MdPictureAsPdf, MdUploadFile } from "react-icons/md";
 import { Tooltip } from "react-tooltip";
 import imageCompression from "browser-image-compression";
 import fnds from "../../assets/friends.png";
@@ -30,15 +30,16 @@ import help from "../../assets/customer-service.png";
 import logout from "../../assets/logout.png";
 import { Link, NavLink, useNavigate } from "react-router";
 import useUser from "../../Hooks/useUser";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import { IoIosSearch } from "react-icons/io";
 import { BsFillChatSquareTextFill } from "react-icons/bs";
 import { io } from "socket.io-client";
+import logoWp from "../../assets/load.webp";
 
 const Navbar = () => {
-  const { user, refetch } = useUser();
+  const { user, loading, refetch } = useUser();
   const axiosPublic = usePublicAxios();
   const [isOpen, setIsOpen] = useState(false);
   const [image, setImage] = useState(null);
@@ -56,6 +57,13 @@ const Navbar = () => {
   const [showNav, setShowNav] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [socket, setSocket] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const CLOUDINARY_UPLOAD_PRESET = import.meta.env
+    .VITE_CLOUDINARY_UPLOAD_PRESET;
+  const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,7 +90,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io("https://fly-book-server.onrender.com", {
+    const newSocket = io("https://api.flybook.com.bd", {
       transports: ["websocket"], // Use WebSocket transport directly
       withCredentials: true, // If your server requires credentials for CORS
     });
@@ -132,9 +140,7 @@ const Navbar = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://fly-book-server.onrender.com/search?q=${encodeURIComponent(
-          searchQuery
-        )}`
+        `https://api.flybook.com.bd/search?q=${encodeURIComponent(searchQuery)}`
       );
       if (!response.ok) {
         const errorMessage = await response.text();
@@ -150,12 +156,39 @@ const Navbar = () => {
     }
   };
 
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    if (!user) {
+      toast.error("Please login first to make a post!");
+      return;
+    }
+    setIsOpen(prev => !prev);
   };
 
-  const handleFileChange = (event) => {
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && 
+          !dropdownRef.current.contains(e.target) && 
+          !buttonRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const handleImageChange = (event) => {
     setImage(event.target.files[0]);
+  };
+
+  const handlePdfChange = (event) => {
+    const file = event.target.files[0];
+    if (file?.type === "application/pdf") {
+      setPdfFile(file);
+    } else {
+      toast.error("Please select a PDF file");
+    }
   };
 
   const handleOpinionChange = (event) => {
@@ -184,46 +217,88 @@ const Navbar = () => {
     event.preventDefault();
     setPostLoading(true);
     let uploadedImageUrl = "";
+    let uploadedPdfUrl = "";
 
-    // First, compress the image
-    let imageFileToUpload = image;
-    if (image) {
-      imageFileToUpload = await compressImage(image);
+    // First, compress and upload the image (required) to ImgBB
+    if (!image) {
+      toast.error("Please select an image");
+      setPostLoading(false);
+      return;
     }
 
+    let imageFileToUpload = await compressImage(image);
+
     // Upload the compressed image to ImgBB
-    if (imageFileToUpload) {
-      const formData = new FormData();
-      formData.append("image", imageFileToUpload);
+    const imageFormData = new FormData();
+    imageFormData.append("image", imageFileToUpload);
+
+    try {
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
+        {
+          method: "POST",
+          body: imageFormData,
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        uploadedImageUrl = result.data.url;
+      } else {
+        toast.error("Image upload failed");
+        setPostLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setPostLoading(false);
+      return;
+    }
+
+    // Handle optional PDF upload to Cloudinary
+    if (pdfFile) {
+      const pdfFormData = new FormData();
+      pdfFormData.append("file", pdfFile);
+      pdfFormData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
       try {
         const response = await fetch(
-          `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`,
           {
             method: "POST",
-            body: formData,
+            body: pdfFormData,
           }
         );
 
-        const result = await response.json();
-        if (result.success) {
-          uploadedImageUrl = result.data.url;
-          navigate("/public-opinion");
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Cloudinary Error:", errorData);
+          toast.error(
+            `PDF upload failed: ${errorData.error?.message || "Unknown error"}`
+          );
+          // Continue with post creation even if PDF upload fails
         } else {
-          toast.error("Image upload failed");
+          const result = await response.json();
+          if (result.secure_url) {
+            uploadedPdfUrl = result.secure_url;
+            toast.success("PDF uploaded successfully");
+          } else {
+            toast.error("PDF upload failed - no URL returned");
+          }
         }
       } catch (error) {
-        console.error("Error uploading image:", error);
+        console.error("Error uploading PDF:", error);
+        toast.error("PDF upload failed - network error");
+        // Continue with post creation even if PDF upload fails
       }
     }
 
-    setImageUrl(uploadedImageUrl);
-    setPostLoading(false);
     const currentDate = new Date().toLocaleDateString();
     const currentTime = new Date().toLocaleTimeString();
     const postData = {
       userId: user._id,
       image: uploadedImageUrl,
+      pdf: uploadedPdfUrl,
       description: opinion,
       date: currentDate,
       time: currentTime,
@@ -239,73 +314,70 @@ const Navbar = () => {
       setIsOpen(false);
       setOpinion("");
       setImage(null);
+      setPdfFile(null);
       navigate("/public-opinion");
     } catch (error) {
       console.log(error);
       toast.error("Failed to post opinion");
     }
+    setPostLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     refetch();
+    setIsMobileMenuOpen(false);
     navigate("/");
+    setTimeout(() => {
+      window.location.reload();
+    }, 50);
   };
+
+  const handleUpcoming = () => {
+    toast.error("Features Upcoming !");
+  };
+
+  const toggleMobileMenu = (e) => {
+    e.stopPropagation();
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      const mobileMenu = document.querySelector('#mobile-menu');
+      const menuButton = document.querySelector('#mobile-menu-button');
+      
+      if (mobileMenu && 
+          !mobileMenu.contains(e.target) && 
+          !menuButton.contains(e.target)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div
-      className={`bg-gray-50 sticky top-0 z-50 transition-transform duration-300 ${
-        window.innerWidth <= 768
-          ? showNav
-            ? "translate-y-0"
-            : "-translate-y-full"
-          : "translate-y-0"
-      }`}
-    >
-      <div className="pt-3 pl-3 pr-3 lg:p-0 lg:hidden flex justify-between items-center relative">
+    <div className={` bg-none md:bg-gray-50  sticky top-0 z-50 `}>
+      <div className=" bg-gray-50 py-3 pl-3 pr-3 lg:p-0 lg:hidden flex justify-between items-center relative">
         <div className="">
           <a href="/">
-            <img
-              src="https://i.ibb.co.com/VjWkST4/logo.png"
-              className=" w-[130px]"
-              alt=""
-            />
+            <img src={logoWp} className=" w-[130px]" alt="" />
           </a>
         </div>
         <div className=" flex flex-row items-center gap-5">
           <Link to={"/donate-history"} className=" text-2xl">
             <FaDonate />
           </Link>
-          <details className="dropdown dropdown-end bg-transparent">
-            <summary className="btn p-0 m-0 bg-transparent text-2xl relative">
+          <Link to={"/chats"} className=" relative text-2xl">
+            <p>
               <BsFillChatSquareTextFill />
-              <p className=" absolute px-1 rounded-full top-0 right-[-8px] text-xs bg-red-700 text-white p-[2px]">
-                {notificationCount}
-              </p>
-            </summary>
-            <ul className="menu dropdown-content space-y-3 bg-base-100 rounded-box z-[1] w-64 p-2 shadow">
-              {notifications.length === 0 ? (
-                <li className="text-gray-500 italic">No new messages</li>
-              ) : (
-                notifications.map((notify, index) => (
-                  <li
-                    className=" hover:shadow-md border-2 rounded-xl border-slate-100 "
-                    key={index}
-                  >
-                    <Link to={`/chats/${notify.senderId}`}>
-                      <p>
-                        <span className=" text-sm font-semibold">
-                          {notify.senderName.split(" ")[0]}:
-                        </span>{" "}
-                        <span className=" text-sm">
-                          {notify.messageText.slice(0, 15)}...
-                        </span>
-                      </p>
-                    </Link>
-                  </li>
-                ))
-              )}
-            </ul>
-          </details>
+            </p>
+            <p className="  absolute top-[-10px] right-[-5px] text-xs text-center px-[2px] p-[1px] bg-red-500 text-white rounded-full">
+              {notificationCount}
+            </p>
+          </Link>
           {user ? (
             <Link
               to={"/my-profile"}
@@ -330,27 +402,38 @@ const Navbar = () => {
           )}
         </div>
       </div>
-      <div className="navbar p-0 border-b-2">
+      <div
+        className={`navbar bg-gray-50  p-0 transition-transform duration-300 border-b-2  ${
+          window.innerWidth <= 768 ? (showNav ? "" : "opacity-0 ") : ""
+        }`}
+      >
         <div className="w-full lg:navbar-start">
-          <ul className="flex w-full flex-row mr-3 justify-between items-center lg:hidden">
+          <ul
+            className={`flex w-full flex-row mr-3 z-10 justify-between items-center lg:hidden `}
+          >
             <li>
               <div className="dropdown">
                 <div
+                  id="mobile-menu-button"
                   tabIndex={0}
                   role="button"
-                  className="btn btn-ghost px-0 pl-4 m-0 lg:hidden"
+                  onClick={toggleMobileMenu}
+                  className="btn btn-ghost px-0 pl-4 m-0"
                 >
-                  <h2 className=" text-[32px]">
+                  <h2 className="text-[32px]">
                     <HiOutlineMenu />
                   </h2>
                 </div>
                 <ul
-                  tabIndex={0}
-                  className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-60 p-2 shadow"
+                  id="mobile-menu"
+                  className={`menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-60 p-2 shadow ${
+                    isMobileMenuOpen ? 'block' : 'hidden'
+                  }`}
                 >
                   <li>
                     <Link
                       to={"/peoples"}
+                      
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
@@ -362,6 +445,7 @@ const Navbar = () => {
                   <li>
                     <Link
                       to={"/my-library"}
+                      
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
@@ -370,7 +454,7 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Library</h2>
                     </Link>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={group} alt="" />
@@ -379,14 +463,18 @@ const Navbar = () => {
                     </div>
                   </li>
                   <li>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
+                    <Link
+                      to={"https://bookoffen.com/"}
+                      
+                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
+                    >
                       <div className=" w-6 ">
                         <img className=" w-full" src={market} alt="" />
                       </div>
                       <h2 className=" text-sm font-normal">Market Place</h2>
-                    </div>
+                    </Link>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={elng} alt="" />
@@ -394,7 +482,7 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">E-Learning</h2>
                     </div>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={channel} alt="" />
@@ -402,7 +490,7 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Channels</h2>
                     </div>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={audioBook} alt="" />
@@ -410,7 +498,7 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Audio Book</h2>
                     </div>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={donetBook} alt="" />
@@ -418,7 +506,7 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Donate Your Book</h2>
                     </div>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={breach} alt="" />
@@ -428,7 +516,7 @@ const Navbar = () => {
                       </h2>
                     </div>
                   </li>
-                  <li>
+                  <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={settings} alt="" />
@@ -437,27 +525,36 @@ const Navbar = () => {
                     </div>
                   </li>
                   <li>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
+                    <Link
+                      to={"/contract-us"}
+                      
+                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
+                    >
                       <div className=" w-6 ">
                         <img className=" w-full" src={help} alt="" />
                       </div>
-                      <h2 className=" text-sm font-normal">Help Center</h2>
-                    </div>
+                      <h2 className=" text-sm font-normal">Contract Us</h2>
+                    </Link>
                   </li>
-                  <li onClick={handleLogout}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={logout} alt="" />
+                  <li>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left hover:bg-gray-200 rounded-md"
+                    >
+                      <div className="flex items-center gap-2 w-full px-2 py-2 cursor-pointer">
+                        <div className="w-6">
+                          <img className="w-full" src={logout} alt="Logout" />
+                        </div>
+                        <h2 className="text-sm font-normal">Log Out</h2>
                       </div>
-                      <h2 className=" text-sm font-normal">Log Out</h2>
-                    </div>
+                    </button>
                   </li>
                 </ul>
               </div>
             </li>
             <li className=" ">
               <details className="dropdown w-full">
-                <summary className="btn p-0 m-0 bg-transparent">
+                <summary className="btn p-0 m-0 border-none shadow-none bg-transparent">
                   <a className=" text-3xl lg:text-4xl">
                     <HiDocumentSearch />
                   </a>
@@ -486,31 +583,21 @@ const Navbar = () => {
             </li>
             <li className=" ml-[-10px]">
               <a
-              href="https://bookoffen.com/"
-                data-tooltip-id="my-tooltip"
-                data-tooltip-content="Market"
+                href="https://bookoffen.com/"
                 className=" text-3xl lg:text-4xl"
               >
                 <FaShop />
               </a>
             </li>
-            <li className=" ">
-              <a
-                data-tooltip-id="my-tooltip"
-                data-tooltip-content="E-Learning"
-                className=" text-3xl lg:text-4xl"
-              >
+            <li className=" " onClick={handleUpcoming}>
+              <a className=" text-3xl lg:text-4xl">
                 <FaUserGraduate />
               </a>
             </li>
             <li className=" ">
-              <a
-                data-tooltip-id="my-tooltip"
-                data-tooltip-content="PDF Book"
-                className=" text-3xl lg:text-4xl"
-              >
+              <Link to={"/pdf-book"} className=" text-3xl lg:text-4xl">
                 <MdPictureAsPdf />
-              </a>
+              </Link>
             </li>
           </ul>
           <div className="lg:flex hidden lg:block items-center space-x-6 ml-2">
@@ -587,22 +674,14 @@ const Navbar = () => {
                 <HiUserAdd />
               </NavLink>
             </li>
-            <li className=" make-post">
+            <li className="make-post">
               <div
+                ref={buttonRef}
                 onClick={toggleDropdown}
-                className={
-                  isOpen
-                    ? "font-bold text-4xl bg-gray-200 shadow-lg"
-                    : "font-bold text-4xl"
-                }
+                className={isOpen ? "font-bold text-4xl bg-gray-200 shadow-lg" : "font-bold text-4xl"}
               >
                 <div>
-                  <p
-                    id="dropdownDefaultButton"
-                    className={`${
-                      isOpen ? "rotate-45" : "rotate-0"
-                    } transition-all`}
-                  >
+                  <p className={`${isOpen ? "rotate-45" : "rotate-0"} transition-all`}>
                     <FaPlusCircle />
                   </p>
                 </div>
@@ -610,13 +689,11 @@ const Navbar = () => {
             </li>
             {/* Dropdown menu */}
             <div
-              id="dropdown"
-              className={`z-10 ${
-                isOpen ? "block" : "hidden"
-              } bg-gray-100 absolute rounded-lg shadow mt-16 w-[500px] p-5 `}
+              ref={dropdownRef}
+              className={`z-50 ${isOpen ? 'block' : 'hidden'} bg-gray-100 fixed  rounded-lg shadow mt-14 w-[500px] p-5`}
             >
-              <div className=" text-xl font-medium">
-                <h1 className=" text-3xl mb-5 text-center border-b-2 pb-2 ">
+              <div className="text-xl font-medium">
+                <h1 className="text-3xl mb-5 text-center border-b-2 pb-2">
                   Make a Post for your Opinion
                 </h1>
                 <form onSubmit={handleSubmit}>
@@ -635,17 +712,34 @@ const Navbar = () => {
                     value={opinion}
                     onChange={handleOpinionChange}
                   ></textarea>
-                  <label
-                    className="block mb-2 mt-3 text-lg font-medium text-gray-800"
-                    htmlFor="file_input"
-                  >
-                    Select Image
-                  </label>
-                  <input
-                    type="file"
-                    className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
-                    onChange={handleFileChange}
-                  />
+                  <div className="flex flex-col gap-3 mt-3">
+                    <label className="text-lg font-medium text-gray-800">
+                      Upload Image (Required)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      required
+                      className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
+                      onChange={handleImageChange}
+                    />
+
+                    <label className="text-lg font-medium text-gray-800">
+                      Upload PDF (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
+                      onChange={handlePdfChange}
+                    />
+                    {pdfFile && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MdPictureAsPdf className="text-xl" />
+                        <span>{pdfFile.name}</span>
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="submit"
                     className="btn text-base w-full mt-7 bg-gray-700 text-white flex items-center justify-center"
@@ -701,7 +795,7 @@ const Navbar = () => {
                     ? "pending"
                     : "font-bold text-4xl"
                 }
-                to={"/notification"}
+                to="/notifications"
               >
                 <IoNotificationsSharp />
               </NavLink>
@@ -712,13 +806,13 @@ const Navbar = () => {
           <ul className="flex flex-row gap-8 justify-end py-2 px-3 rounded-lg mr-5 items-center">
             <li className=" ml-[-10px]">
               <NavLink
-              to={'https://bookoffen.com/'}
+                to={"https://bookoffen.com/"}
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
                     ? "pending"
-                    : "font-bold text-3xl lg:text-4xl"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="Market"
@@ -726,14 +820,14 @@ const Navbar = () => {
                 <FaShop />
               </NavLink>
             </li>
-            <li className=" ">
+            <li className=" " onClick={handleUpcoming}>
               <NavLink
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
                     ? "pending"
-                    : "font-bold text-3xl lg:text-4xl"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="E-Learning"
@@ -743,12 +837,13 @@ const Navbar = () => {
             </li>
             <li className=" ">
               <NavLink
+                to={"/pdf-book"}
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
                     ? "pending"
-                    : "font-bold text-3xl lg:text-4xl"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="PDF Book"

@@ -4,12 +4,14 @@ import useUser from "../../Hooks/useUser";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import { Link } from "react-router";
 import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 
 const MyOnindoRequest = () => {
   const { allOnindoBooks, refetch, isLoading } = useAllOnindoBook();
   const { user, loading } = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
+  const socket = io("https://api.flybook.com.bd");
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -21,9 +23,9 @@ const MyOnindoRequest = () => {
     );
   }
   const myBooks = allOnindoBooks.filter((book) => book.userId === user.id);
-  const requestBooks = myBooks.filter((book) => book.requestBy.length > 0);
+  const requestBooks = myBooks.filter((book) => book.requestBy?.length > 0);
 
-  const handleRequestCancel = async (bookId) => {
+  const handleRequestCancel = async (bookId, requestBy) => {
     if (!bookId) {
       return toast.error("Invalid book ID. Please try again.");
     }
@@ -39,6 +41,15 @@ const MyOnindoRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: requestBy,
+          type: "bookReqClO",
+          notifyText: "Cancel Your Book Request",
+          roomId: [requestBy],
+        });
         refetch();
       }
     } catch (error) {
@@ -84,6 +95,15 @@ const MyOnindoRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book Transfered!");
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: requestBy,
+          type: "bookReqTns",
+          notifyText: "Transfer a Book",
+          roomId: [requestBy],
+        });
         refetch();
       }
     } catch (error) {
@@ -183,7 +203,7 @@ const MyOnindoRequest = () => {
                   Transfer
                 </button>
                 <button
-                  onClick={() => handleRequestCancel(book._id)}
+                  onClick={() => handleRequestCancel(book._id, book.requestBy)}
                   className="w-full py-2 text-sm lg:text-base px-4 bg-red-400 text-white rounded-full hover:bg-red-500"
                 >
                   Cancel

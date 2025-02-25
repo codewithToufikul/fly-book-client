@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FaCircleExclamation, FaUpload } from "react-icons/fa6";
+import { FaArrowLeftLong, FaCircleExclamation, FaUpload } from "react-icons/fa6";
 import { FiMenu } from "react-icons/fi";
 import usePeople from "../../Hooks/usePeople";
 import useUser from "../../Hooks/useUser";
@@ -10,11 +10,13 @@ import { io } from "socket.io-client";
 import { Link, useParams } from "react-router";
 import imageCompression from "browser-image-compression";
 import axios from "axios";
-import { TbPhotoShare } from "react-icons/tb";
+import { TbPhotoShare, TbFileUpload } from "react-icons/tb";
 import DownNav from "../DownNav/DownNav";
 import { useQuery } from "@tanstack/react-query";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { MdDeleteForever } from "react-icons/md";
+import { AiOutlineFilePdf } from "react-icons/ai";
+import { BsFileEarmarkPdf } from 'react-icons/bs';
 
 const MassegeBox = () => {
   const { userId } = useParams();
@@ -30,6 +32,11 @@ const MassegeBox = () => {
   const axiosPublic = usePublicAxios();
   const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Add these constants for Cloudinary
+  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET; // You'll need to create this in Cloudinary
 
   useEffect(() => {
     // Scroll to the bottom whenever messages change
@@ -49,7 +56,7 @@ const MassegeBox = () => {
 
   useEffect(() => {
     // Initialize the Socket.IO connection
-    const newSocket = io("https://fly-book-server.onrender.com", {
+    const newSocket = io("https://api.flybook.com.bd", {
       transports: ["websocket"], // Use WebSocket transport directly
       withCredentials: true, // If your server requires credentials for CORS
     });
@@ -126,10 +133,11 @@ const MassegeBox = () => {
   };
 
   const handleImageUpload = async (file) => {
+    setIsUploading(true);
     try {
       const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.015, // Compress to max 15KB
-        maxWidthOrHeight: 500, // Max image dimension
+        maxSizeMB: 0.015,
+        maxWidthOrHeight: 500,
         useWebWorker: true,
       });
       const formData = new FormData();
@@ -138,29 +146,59 @@ const MassegeBox = () => {
         `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
         formData
       );
+      setIsUploading(false);
       return res.data.data.url;
     } catch (error) {
       console.error("Image upload failed:", error);
       toast.error("Image upload failed.");
+      setIsUploading(false);
       return null;
     }
   };
 
-  const handleSendMessage = async (e, imageFile = null) => {
+  // Add this function to handle PDF upload
+  const handlePdfUpload = async (file) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+      
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+        formData
+      );
+      setIsUploading(false);
+      return response.data.secure_url;
+    } catch (error) {
+      console.error("PDF upload failed:", error);
+      toast.error("PDF upload failed.");
+      setIsUploading(false);
+      return null;
+    }
+  };
+
+  // Modify handleSendMessage to handle PDFs
+  const handleSendMessage = async (e, file = null) => {
     e.preventDefault();
     const messageText = e.target.message?.value.trim() || "";
 
-    if (messageText && imageFile) {
-      toast.error("You cannot send both text and image together.");
+    if (messageText && file) {
+      toast.error("You cannot send both text and file together.");
       return;
     }
 
     let messageType = "text";
     let mediaUrl = null;
 
-    if (imageFile) {
-      messageType = "image";
-      mediaUrl = await handleImageUpload(imageFile);
+    if (file) {
+      if (file.type === "application/pdf") {
+        messageType = "pdf";
+        mediaUrl = await handlePdfUpload(file);
+      } else if (file.type.startsWith("image/")) {
+        messageType = "image";
+        mediaUrl = await handleImageUpload(file);
+      }
     }
 
     if (!messageText && !mediaUrl) return;
@@ -187,6 +225,14 @@ const MassegeBox = () => {
       },
     ]);
     e.target.reset();
+  };
+
+  // Add this function to handle file changes
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleSendMessage(e, file);
+    }
   };
 
   useEffect(() => {
@@ -224,13 +270,6 @@ const MassegeBox = () => {
     };
   }, [socket]);
 
-  const handleImageChange = async (e) => {
-    const imageFile = e.target.files[0];
-    if (imageFile) {
-      handleSendMessage(e, imageFile); // Send message with image as soon as it's selected
-    }
-  };
-
   if (peopleLoading || userLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -256,7 +295,7 @@ const MassegeBox = () => {
     setDeleteLoading(true);
     try {
       const response = await fetch(
-        `https://fly-book-server.onrender.com/api/delete-message/${messageId}`,
+        `https://api.flybook.com.bd/api/delete-message/${messageId}`,
         {
           method: "DELETE",
           headers: {
@@ -282,174 +321,232 @@ const MassegeBox = () => {
     setDeleteLoading(false);
   };
 
-  return (
-    <div className="drawer-content flex flex-col justify-between">
-      {/* Header Section */}
-      <div className="w-full bg-gray-100 p-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex sticky top-1 items-center gap-5">
-          <label
-            htmlFor="my-drawer-2"
-            className="drawer-button text-3xl font-semibold lg:hidden"
-          >
-            <FiMenu />
-          </label>
-          <Link to={`/profile/${userId}`} className="flex items-center gap-2">
-            <div className="w-[40px] h-[40px] p-1 border-2 rounded-full border-green-200">
-              <img
-                className="w-full h-full object-cover rounded-full"
-                src={userW.profileImage}
-                alt="User Profile"
-              />
-            </div>
-            <h1 className="text-xl font-semibold">{userW.name}</h1>
-          </Link>
-        </div>
-        <Link className="text-2xl">
-          <FaCircleExclamation />
-        </Link>
-      </div>
+  const PdfPreview = ({ url, senderId, myId }) => {
+    const [fileName, setFileName] = useState('');
 
-      {/* Chat Content Section */}
-      <div className="flex-grow bg-white overflow-y-auto max-h-[calc(100vh-160px)]">
-        {" "}
-        {/* Adjust the height to leave space for the header and input */}
-        <div className="p-4 space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.senderId === myData.id ? "justify-end" : "justify-start"
+    useEffect(() => {
+      const name = url.split('/').pop().split('.')[0];
+      setFileName(name.length > 15 ? name.substring(0, 15) + '...' : name);
+    }, [url]);
+
+    return (
+      <div className="max-w-[300px] transition-transform hover:scale-[1.02]">
+        <div className={`rounded-2xl overflow-hidden shadow-lg ${
+          senderId === myId
+            ? "bg-blue-500 text-white"
+            : "bg-white text-gray-900"
+        }`}>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <BsFileEarmarkPdf size={32} className={senderId === myId ? "text-white/90" : "text-red-500"} />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{fileName || 'PDF Document'}</p>
+                <p className="text-sm opacity-75">PDF File</p>
+              </div>
+            </div>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-3 block text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                senderId === myId
+                  ? "bg-white/10 hover:bg-white/20 text-white"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
               }`}
             >
-              <div
-                className={`max-w-[70%] items-center gap-2 flex ${
-                  message.senderId === myData.id
-                    ? "flex-row-reverse items-end"
-                    : "flex-row"
-                } `}
-              >
-                <div
-                  className={`gap-2 flex ${
-                    message.senderId === myData.id
-                      ? "flex-col items-end"
-                      : "flex-col"
-                  } `}
-                >
-                  {message.messageType === "image" ? (
+              Open PDF
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50 relative">
+      {/* Header - adjusted padding */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-2 py-2">
+        <div className="flex items-center gap-2">
+          <Link 
+            to={'/chats'}
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <FaArrowLeftLong className="text-lg" />
+          </Link>
+          <Link to={`/profile/${userId}`} className="flex items-center gap-2">
+            <div className="relative">
+              <img
+                className="w-8 h-8 rounded-full object-cover border-2 border-blue-500/20"
+                src={userW.profileImage}
+                alt={userW.name}
+              />
+              <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></div>
+            </div>
+            <div>
+              <h1 className="font-medium text-gray-900 text-sm">{userW.name}</h1>
+              <p className="text-xs text-gray-500">Online</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Messages Area - adjusted padding and margins */}
+      <div className="flex-1 overflow-y-auto px-2 pt-14 pb-16">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex mb-3 ${
+              message.senderId === myData.id ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div className={`max-w-[85%] space-y-1`}>
+              {message.messageType === "image" ? (
+                <div className="relative">
+                  <div className="rounded-xl overflow-hidden shadow-sm">
                     <img
                       src={message.mediaUrl}
                       alt="message"
-                      className="max-w-[200px] max-h-[200px] rounded-lg"
+                      className="w-full max-w-[280px] object-cover"
+                      loading="lazy"
                     />
-                  ) : (
-                    <p
-                      className={`text-start text-sm lg:text-base p-3 rounded-lg shadow ${
-                        message.senderId === myData.id
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-300 text-black"
-                      } overflow-hidden break-words`}
-                    >
-                      {message.messageText}
-                    </p>
+                  </div>
+                  {message.senderId === myData.id && (
+                    <div className="absolute -right-1 -top-1 opacity-80 hover:opacity-100 transition-opacity">
+                      <details className="dropdown dropdown-left">
+                        <summary className="btn btn-ghost btn-xs bg-white/10 backdrop-blur-sm rounded-full p-1">
+                          <HiOutlineDotsHorizontal className="text-white" />
+                        </summary>
+                        <ul className="dropdown-content menu shadow bg-white rounded-lg">
+                          <li onClick={() => handleMessageDelete(message._id)}>
+                            <button className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg">
+                              {deleteLoading ? (
+                                <div className="animate-spin h-5 w-5 border-2 border-red-500 rounded-full" />
+                              ) : (
+                                <MdDeleteForever size={20} />
+                              )}
+                            </button>
+                          </li>
+                        </ul>
+                      </details>
+                    </div>
                   )}
-                  <p className=" text-[10px] lg:text-sm text-slate-400">
-                    {new Date(message.timestamp).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </p>
                 </div>
+              ) : message.messageType === "pdf" ? (
+                <div className="relative max-w-[280px]">
+                  <PdfPreview 
+                    url={message.mediaUrl} 
+                    senderId={message.senderId}
+                    myId={myData.id}
+                  />
+                  {message.senderId === myData.id && (
+                    <div className="absolute -right-1 -top-1 opacity-80 hover:opacity-100 transition-opacity">
+                      <details className="dropdown dropdown-left">
+                        <summary className="btn btn-ghost btn-xs bg-white/10 backdrop-blur-sm rounded-full p-1">
+                          <HiOutlineDotsHorizontal className="text-white" />
+                        </summary>
+                        <ul className="dropdown-content menu shadow bg-white rounded-lg">
+                          <li onClick={() => handleMessageDelete(message._id)}>
+                            <button className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg">
+                              {deleteLoading ? (
+                                <div className="animate-spin h-5 w-5 border-2 border-red-500 rounded-full" />
+                              ) : (
+                                <MdDeleteForever size={20} />
+                              )}
+                            </button>
+                          </li>
+                        </ul>
+                      </details>
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <div
-                  className={`flex items-center justify-center ${
+                  className={`relative ${
                     message.senderId === myData.id
-                      ? ""
-                      : "hidden"
-                  }`}
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-900"
+                  } px-4 py-2.5 rounded-xl shadow-sm`}
                 >
-                  <details
-                    className={`dropdown ${
-                      message.senderId === myData.id
-                        ? "dropdown-left"
-                        : "dropdown-right"
-                    }`}
-                  >
-                    <summary className="btn p-0 py-0 bg-transparent border-none shadow-none mb-4 text-lg font-bold">
-                      <HiOutlineDotsHorizontal />
-                    </summary>
-                    <ul className="menu mx-2 top-0 dropdown-content bg-base-100 rounded-box z-[1] p-0 m-0 shadow">
-                      <li onClick={() => handleMessageDelete(message._id)}>
-                        <p className=" text-2xl text-red-700">
-                          {deleteLoading ? (
-                            <svg
-                              className="animate-spin h-5 w-5 mr-3"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              ></path>
-                            </svg>
-                          ) : (
-                            <MdDeleteForever />
-                          )}
-                        </p>
-                      </li>
-                    </ul>
-                  </details>
+                  <p className="text-sm">{message.messageText}</p>
+                  {message.senderId === myData.id && (
+                    <div className="absolute -right-1 -top-1 opacity-80 hover:opacity-100 transition-opacity">
+                      <details className="dropdown dropdown-left">
+                        <summary className="btn btn-ghost btn-xs bg-white/10 backdrop-blur-sm rounded-full p-1">
+                          <HiOutlineDotsHorizontal className="text-white" />
+                        </summary>
+                        <ul className="dropdown-content menu shadow bg-white rounded-lg">
+                          <li onClick={() => handleMessageDelete(message._id)}>
+                            <button className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg">
+                              {deleteLoading ? (
+                                <div className="animate-spin h-5 w-5 border-2 border-red-500 rounded-full" />
+                              ) : (
+                                <MdDeleteForever size={20} />
+                              )}
+                            </button>
+                          </li>
+                        </ul>
+                      </details>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+              <p className="text-[10px] text-gray-400 px-1">
+                {new Date(message.timestamp).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </p>
             </div>
-          ))}
-          <div ref={bottomRef} />
-          {isTyping && (
-            <div className="flex justify-start items-center space-x-2 p-2 mb-5 w-fit bg-gray-300 py-3 rounded-md">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-700"></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100"></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-400"></div>
-            </div>
-          )}
-        </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+        
+        {isTyping && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm w-fit">
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+        )}
       </div>
 
-      {/* Input Field Fixed at Bottom */}
-      <form
-        onSubmit={handleSendMessage}
-        className="w-full bg-gray-100 px-4 py-2 lg:p-4 border-t-2 flex justify-between items-center "
-      >
-        <label htmlFor="image-upload" className="cursor-pointer pr-3 lg:pr-4">
-          <TbPhotoShare size={30} /> {/* এখানে আপনার পছন্দের আইকন */}
-        </label>
-        <input
-          type="file"
-          id="image-upload"
-          name="image"
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageChange}
-        />
-        <input
-          type="text"
-          name="message"
-          onKeyDown={handleTyping}
-          placeholder="Type a message..."
-          className="flex-grow border-2 max-w-[230px] md:max-w-full border-gray-300 rounded-md p-2"
-        />
-        <button type="submit" className="pl-3 pr-1 text-2xl">
-          <LuSend />
-        </button>
-      </form>
+      {/* Input Area - completely restructured for mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <form onSubmit={handleSendMessage} className="flex items-center px-2 py-2 gap-1.5 max-w-screen-sm mx-auto">
+          <div className="flex gap-1.5">
+            <label htmlFor="image-upload" className="p-1.5 hover:text-gray-700 text-gray-500">
+              <TbPhotoShare className="text-xl" />
+            </label>
+            <label htmlFor="pdf-upload" className="p-1.5 hover:text-gray-700 text-gray-500">
+              <TbFileUpload className="text-xl" />
+            </label>
+          </div>
+          
+          <input type="file" id="image-upload" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input type="file" id="pdf-upload" accept=".pdf" className="hidden" onChange={handleFileChange} />
+          
+          <input
+            type="text"
+            name="message"
+            onKeyDown={handleTyping}
+            placeholder="Type your message..."
+            className="flex-1 min-w-0 px-3 py-1.5 bg-gray-50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+          
+          <button 
+            type="submit" 
+            disabled={isUploading}
+            className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-full disabled:opacity-50"
+          >
+            {isUploading ? (
+              <div className="animate-spin h-3 w-3 border-2 border-white rounded-full" />
+            ) : (
+              <LuSend className="text-base" />
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import logo from "../../assets/logo.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -11,12 +11,48 @@ const Register = () => {
   const [numErr, setNumErr] = useState("");
   const navigete = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ latitude, longitude });
+        },
+        (error) => {
+          console.error("Error fetching location", error);
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
+  }, []);
+  console.log(userLocation);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setPassErr("");
     setNumErr("");
     setLoading(true);
+
+    if (!userLocation || userLocation == null) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ latitude, longitude });
+          },
+          (error) => {
+            toast.error("Please allow location access");
+            console.error("Error fetching location", error);
+          }
+        );
+      } else {
+        toast.error("Geolocation is not supported by your browser");
+      }
+      return;
+    }
   
     const formData = new FormData(e.target);
     const name = formData.get("name");
@@ -49,10 +85,11 @@ const Register = () => {
       email,
       number,
       password,
+      userLocation,
     };
   
     try {
-      const res = await axios.post("https://fly-book-server.onrender.com/users/register", userInfo);
+      const res = await axios.post("https://api.flybook.com.bd/users/register", userInfo);
   
       if (res.data.success) {
         toast.success("Registered successfully!");

@@ -4,30 +4,38 @@ const fetchUserProfile = async () => {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    return null; // Return null if no token is found
+    return null; // No token found, return null
   }
 
-  const response = await fetch("https://fly-book-server.onrender.com/profile", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch("https://api.flybook.com.bd/profile", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to fetch user data.");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch user data.");
+    }
+
+    return response.json();
+  } catch (error) {
+    throw new Error(error.message || "Network Error");
   }
-
-  return response.json();
 };
 
 const useUser = () => {
   const queryResult = useQuery({
     queryKey: ["userProfile"],
     queryFn: fetchUserProfile,
-    retry: false, // Disable retries
-    enabled: !!localStorage.getItem("token"), // Run only if token exists
+    onSuccess: (data) => {
+      console.log('User data fetched:', data);
+    },
+    onError: (error) => {
+      console.error('Error fetching user data:', error);
+    },
   });
 
   const { data: user, isLoading, isError, error, refetch } = queryResult;

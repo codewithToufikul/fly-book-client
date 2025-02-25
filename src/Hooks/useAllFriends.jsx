@@ -12,7 +12,7 @@ const useAllFriends = () => {
       if (!token) {
         return [];
       }
-      const res = await axios.get("https://fly-book-server.onrender.com/all-friends", {
+      const res = await axios.get("https://api.flybook.com.bd/all-friends", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

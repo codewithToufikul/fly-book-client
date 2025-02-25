@@ -23,7 +23,7 @@ const Login = () => {
     const password = formData.get("password");
 
     try {
-      const { data } = await axios.post("https://fly-book-server.onrender.com/users/login", {
+      const { data } = await axios.post("https://api.flybook.com.bd/users/login", {
         number,
         password,
       });
@@ -154,6 +154,16 @@ const Login = () => {
                 className="font-medium text-primary-600 hover:underline"
               >
                 Sign up
+              </Link>
+            </p>
+            <div className="divider">OR</div>
+            <p className="text-sm font-light text-gray-500">
+              Go Back Home{" "}
+              <Link
+                to="/"
+                className="font-medium text-primary-600 hover:underline"
+              >
+                Home
               </Link>
             </p>
           </form>

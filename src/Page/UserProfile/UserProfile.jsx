@@ -9,14 +9,17 @@ import heartfill from "../../assets/heart.png";
 import { IoLibraryOutline } from "react-icons/io5";
 import { MdOutlineAddIcCall, MdOutlineMessage, MdWork } from "react-icons/md";
 import { FaRegHeart, FaUserGraduate } from "react-icons/fa";
+import { FiUserX } from "react-icons/fi";
 import { HiHomeModern } from "react-icons/hi2";
 import { FaLocationDot } from "react-icons/fa6";
-import { IoIosMail } from "react-icons/io";
+import { IoIosMail, IoMdPersonAdd } from "react-icons/io";
 import { useQuery } from "@tanstack/react-query";
 import usePublicAxios from "../../Hooks/usePublicAxios";
+import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 
 const UserProfile = () => {
-  const { user: myData, loading: userLoading } = useUser();
+  const { user: myData, loading: userLoading, refetch } = useUser();
   const { peoples, isLoading: peopleLoading } = usePeople();
   const { userId } = useParams();
   const axiosPublic = usePublicAxios();
@@ -24,6 +27,7 @@ const UserProfile = () => {
   const [expandedPosts, setExpandedPosts] = useState({});
   const [isUserFound, setIsUserFound] = useState(false);
   const [userAt, setUserAt] = useState(null);
+  const socket = io("https://api.flybook.com.bd");
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -113,6 +117,83 @@ const UserProfile = () => {
     );
   }
 
+  const sendFriendRequest = async (recipientId) => {
+    try {
+      await axiosPublic.post(
+        "/friend-request/send",
+        { recipientId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("request sent !");
+      socket.emit("sendRequest", {
+        senderId: myData.id,
+        senderName: myData.name,
+        senderProfile: myData.profileImage,
+        receoientId: userId,
+        type: "fndReq",
+        notifyText: "Send Friend Request",
+        roomId: [userId],
+      });
+      refetch();
+    } catch (error) {
+      console.log(error);
+      toast.error("something went wrong !");
+    }
+  };
+
+  const handleAcceptReq = async (acceptId) => {
+    try {
+      await axiosPublic.post(
+        "/friend-request/accept",
+        { acceptId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Request Accepted !");
+      socket.emit("sendRequest", {
+        senderId: myData.id,
+        senderName: myData.name,
+        senderProfile: myData.profileImage,
+        receoientId: userId,
+        type: "fndReq",
+        notifyText: "Friend Request Accept",
+        roomId: [userId],
+      });
+      refetch();
+    } catch (error) {
+      console.log(error);
+      toast.error("something went wrong !");
+    }
+  };
+
+  const removeFriendRequest = async (senderId) => {
+    try {
+      await axiosPublic.post(
+        "/friend-request/reject",
+        { senderId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Request Rejected !");
+      refetch();
+    } catch (error) {
+      console.log(error);
+      toast.error("something went wrong !");
+    }
+  };
+  const cancelFriendRequest = async (recipientId) => {
+    try {
+      await axiosPublic.post(
+        "/friend-request/cancel",
+        { recipientId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.error("Request Cancel !");
+      refetch();
+    } catch (error) {
+      console.log(error);
+      toast.error("something went wrong !");
+    }
+  };
+
   const post = data.filter((perPost) => perPost.userId === userId);
   return (
     <div>
@@ -130,7 +211,8 @@ const UserProfile = () => {
             />
           </div>
           <div className="flex justify-between flex-col lg:flex-row lg:items-end">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center  justify-between ">
+              <div className=" flex items-center  gap-4">
               <div className="relative w-[100px] h-[100px] lg:w-[180px] mt-[-30px] lg:ml-[60px] lg:h-[180px] border-4 border-white rounded-full">
                 <img
                   src={
@@ -141,16 +223,85 @@ const UserProfile = () => {
                   className="w-full h-full object-cover rounded-full"
                 />
               </div>
-              <div>
+              <div className="">
                 <h1 className="text-lg lg:text-3xl font-semibold">
                   {userAt?.name}
                 </h1>
                 <p className="lg:text-lg text-slate-400">
-                  {myData.friends.includes(userId) ? "Your Friend" : ""}
+                  {myData?.friends?.includes(userId) ? "Your Friend" : ""}
                 </p>
               </div>
+              </div>
+              {myData.friends?.includes(userId) ? (
+                <button className="shadow-md btn text-xs lg:text-[17px] hidden bg-gray-100 text-gray-600 py-2 rounded">
+                  Friend
+                </button>
+              ) : myData.friendRequestsSent?.includes(userId) ? (
+                <button
+                  onClick={() => cancelFriendRequest(userId)}
+                  className="shadow-md btn text-xs bg-yellow-50 lg:text-[17px] lg:hidden block text-yellow-600 py-2 rounded"
+                >
+                  Cancel
+                </button>
+              ) : myData.friendRequestsReceived?.includes(userId) ? (
+                <div className="flex lg:hidden block gap-2 justify-center">
+                  <button
+                    onClick={() => handleAcceptReq(userId)}
+                    className=" text-lg p-2 btn bg-blue-50 text-blue-600 rounded"
+                  >
+                    <IoMdPersonAdd />
+                  </button>
+                  <button
+                    onClick={() => removeFriendRequest(userId)}
+                    className=" text-lg p-2 btn bg-red-50 text-red-600 rounded"
+                  >
+                    <FiUserX />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => sendFriendRequest(userId)}
+                  className="shadow-md btn text-xs lg:text-[17px] lg:hidden block bg-green-50 text-green-600 py-2 rounded"
+                >
+                  Add
+                </button>
+              )}
             </div>
             <div className="flex items-center lg:gap-4 justify-between mt-4 lg:mb-5">
+              {myData.friends?.includes(userId) ? (
+                <button className="shadow-md btn text-base lg:text-[17px] hidden lg:block bg-gray-100 text-gray-600 py-2 rounded">
+                  Friend
+                </button>
+              ) : myData.friendRequestsSent?.includes(userId) ? (
+                <button
+                  onClick={() => cancelFriendRequest(userId)}
+                  className="shadow-md btn text-base bg-yellow-50 lg:text-[17px] hidden lg:block text-yellow-600 py-2 rounded"
+                >
+                  Cancel Request
+                </button>
+              ) : myData.friendRequestsReceived?.includes(userId) ? (
+                <div className="flex hidden lg:block gap-2 justify-center">
+                  <button
+                    onClick={() => handleAcceptReq(userId)}
+                    className=" btn bg-blue-50 text-blue-600 rounded"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => removeFriendRequest(userId)}
+                    className=" btn bg-red-50 text-red-600 rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => sendFriendRequest(userId)}
+                  className="shadow-md btn text-base lg:text-[17px] hidden lg:block bg-green-50 text-green-600 py-2 rounded"
+                >
+                  Add Friend
+                </button>
+              )}
               <Link
                 to={`/library/${userId}`}
                 className="btn bg-white shadow-sm"
@@ -247,7 +398,10 @@ const UserProfile = () => {
           {/* POSTS SECTION */}
           <div className="col-span-3 space-y-8 lg:overflow-y-auto lg:h-[calc(100vh-100px)]">
             {post.length > 0 ? (
-              post.slice().reverse().map((perPost) => (
+              post
+                .slice()
+                .reverse()
+                .map((perPost) => (
                   <div
                     key={perPost._id}
                     className="card bg-gray-50 shadow-sm rounded-md"
@@ -280,7 +434,7 @@ const UserProfile = () => {
                           wordWrap: "break-word",
                         }}
                         className="text-xs text-slate-700 lg:text-base w-fit"
-                        onClick={() => toggleExpand(post._id)}
+                        onClick={() => toggleExpand(perPost._id)}
                       >
                         {expandedPosts[perPost._id]
                           ? perPost.description
@@ -330,7 +484,9 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
-      <div className=" mt-10"><DownNav/></div>
+      <div className=" mt-10">
+        <DownNav />
+      </div>
     </div>
   );
 };

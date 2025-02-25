@@ -4,12 +4,14 @@ import useAllOnindoBook from "../../Hooks/useAllOnindoBook";
 import useUser from "../../Hooks/useUser";
 import toast from "react-hot-toast";
 import usePublicAxios from "../../Hooks/usePublicAxios";
+import { io } from "socket.io-client";
 
 const UserOnindoLibrary = () => {
   const { userId } = useParams();
   const {user, loading} = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
+  const socket = io("https://api.flybook.com.bd");
   const { allOnindoBooks, refetch, isLoading } = useAllOnindoBook();
   if (isLoading || loading) {
     return (
@@ -24,6 +26,10 @@ const UserOnindoLibrary = () => {
   const userBooks = allOnindoBooks.filter((book) => book.userId === userId);
 
   const handleRequestBook = async (bookId) => {
+    if(user.verificationStatus !== true){
+      toast.error('at fast verify your face 😊')
+      return;
+    }
     if (!bookId) {
       return toast.error("Invalid book ID. Please try again.");
     }
@@ -39,6 +45,15 @@ const UserOnindoLibrary = () => {
 
       if (response.status === 200) {
         toast.success("Book request successfully!");
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: userId,
+          type: "bookReqOnindo",
+          notifyText: "Send a Book Request",
+          roomId: [userId],
+        });
         refetch()
       }
     } catch (error) {
@@ -83,6 +98,15 @@ const UserOnindoLibrary = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: userId,
+          type: "bookReqOnindo",
+          notifyText: "Cancel Book Request",
+          roomId: [userId],
+        });
         refetch()
       }
     } catch (error) {

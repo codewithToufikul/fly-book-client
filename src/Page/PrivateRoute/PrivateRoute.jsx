@@ -1,11 +1,12 @@
-
 import { Navigate } from "react-router";
 import useUser from "../../Hooks/useUser";
 import { jwtDecode } from "jwt-decode";
+import { useState } from "react";
 
 const PrivateRoute = ({ children }) => {
+  const [showModal, setShowModal] = useState(false);
   const token = localStorage.getItem("token");
-  const { user,loading: isLoading } = useUser();
+  const { user, loading: isLoading } = useUser();
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -31,7 +32,33 @@ const PrivateRoute = ({ children }) => {
   };
 
   if (!token || !isTokenValid(token, userNumber)) {
-    return <Navigate to="/login" />;
+    return (
+      <>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-4">Login Required</h2>
+            <p className="text-gray-600 mb-6">
+              Please login first to access this page.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => window.history.back()}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => window.location.href = '/login'}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="fixed inset-0 backdrop-blur-sm z-30"></div>
+      </>
+    );
   }
 
   return children;

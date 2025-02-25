@@ -12,7 +12,7 @@ const MyBookRequest = () => {
   const { user, loading } = useUser();
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
-  const socket = io("https://fly-book-server.onrender.com");
+  const socket = io("https://api.flybook.com.bd");
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -43,16 +43,16 @@ const MyBookRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
-        refetch();
         socket.emit("sendRequest", {
           senderId: user.id,
           senderName: user.name,
           senderProfile: user.profileImage,
           receoientId: requestBy,
-          type: "bookReqAc",
-          notifyText: "Cancel Book Request",
+          type: "bookReqCl",
+          notifyText: "Cancel your Book Request",
           roomId: [requestBy],
         });
+        refetch();
       }
     } catch (error) {
       console.error("Error while Canceling the book:", error);
@@ -95,7 +95,6 @@ const MyBookRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Accept!");
-        refetch();
         socket.emit("sendRequest", {
           senderId: user.id,
           senderName: user.name,
@@ -105,6 +104,7 @@ const MyBookRequest = () => {
           notifyText: "Accept Your Book Request",
           roomId: [requestBy],
         });
+        refetch();
       }
     } catch (error) {
       console.error("Error while Accepting the book:", error);
@@ -158,7 +158,7 @@ const MyBookRequest = () => {
           senderProfile: user.profileImage,
           receoientId: requestBy,
           type: "bookReqAc",
-          notifyText: "Transfer a Book",
+          notifyText: "Transfer your Book",
           roomId: [requestBy],
         });
       }

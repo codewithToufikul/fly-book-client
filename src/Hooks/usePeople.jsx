@@ -10,7 +10,7 @@ const usePeople = () => {
       if (!token) {
         return [];
       }
-      const res = await axios.get("https://fly-book-server.onrender.com/peoples", {
+      const res = await axios.get("https://api.flybook.com.bd/peoples", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

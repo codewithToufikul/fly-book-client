@@ -12,7 +12,7 @@ const useAllBook = () => {
         if (!token) {
           return [];
         }
-        const res = await axios.get("https://fly-book-server.onrender.com/all-books", {
+        const res = await axios.get("https://api.flybook.com.bd/all-books", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

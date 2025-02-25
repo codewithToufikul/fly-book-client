@@ -9,10 +9,10 @@ import { Link, useNavigate } from "react-router";
 import * as faceapi from "face-api.js";
 import { IoVideocam } from "react-icons/io5";
 import { IoIosMail } from "react-icons/io";
-import { FaPhoneAlt, FaRegHeart, FaUserGraduate } from "react-icons/fa";
+import { FaFilePdf, FaPhoneAlt, FaRegHeart, FaUserGraduate } from "react-icons/fa";
 import pChannel from "../../assets/pchannel.png";
 import MyLibrary from "../../assets/my-library.png";
-import { MdWork } from "react-icons/md";
+import { MdEditLocationAlt, MdWork } from "react-icons/md";
 import { HiHomeModern } from "react-icons/hi2";
 import { FaLocationDot } from "react-icons/fa6";
 import heartfill from "../../assets/heart.png";
@@ -22,13 +22,16 @@ import { useQuery } from "@tanstack/react-query";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import useAllFriends from "../../Hooks/useAllFriends";
 import imageCompression from "browser-image-compression";
+import { HiDotsHorizontal } from "react-icons/hi";
+import { FaNoteSticky } from "react-icons/fa6";
+import { RiDeleteBin6Line } from "react-icons/ri";
 
 const Profile = () => {
   const { user, loading: userLoading, refetch } = useUser();
   const [loadingUpload, setLoadingUpload] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
   const token = localStorage.getItem("token");
-  const [faceApiLoading, setFaceApiLoading] = useState(false); // Renamed the second loading state
+  const [faceApiLoading, setFaceApiLoading] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [isVideoStarted, setIsVideoStarted] = useState(false);
   const [updateLogin, setUpdateLogin] = useState(false);
@@ -38,6 +41,9 @@ const Profile = () => {
   const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
   const [expandedPosts, setExpandedPosts] = useState({});
   const { allFriends, refetch: refetchFriends, isLoading } = useAllFriends();
+  const [notes, setNotes] = useState([]);
+  const [newNote, setNewNote] = useState('');
+  const [showNoteModal, setShowNoteModal] = useState(false);
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -47,8 +53,34 @@ const Profile = () => {
   };
 
   useEffect(() => {
+    // Scroll to top
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Load face-api models
+    const loadModels = async () => {
+      setFaceApiLoading(true);
+      await faceapi.nets.ssdMobilenetv1.loadFromUri("/models");
+      await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
+      await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
+      setFaceApiLoading(false);
+    };
+
+    // Fetch notes
+    const fetchNotes = async () => {
+      try {
+        const response = await axiosPublic.get(
+          "/notes",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setNotes(response.data.notes);
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      }
+    };
+
+    loadModels();
+    fetchNotes();
+  }, [token]);
 
   const {
     data,
@@ -59,25 +91,6 @@ const Profile = () => {
     queryFn: () =>
       axiosPublic.get("/opinion/posts").then((res) => res.data.data),
   });
-
-  // Load the face-api.js models
-  const loadModels = async () => {
-    setFaceApiLoading(true); // Use the renamed loading state here
-    await faceapi.nets.ssdMobilenetv1.loadFromUri("/models"); // Load SSD MobileNet v1 model
-    await faceapi.nets.faceLandmark68Net.loadFromUri("/models"); // Load Face Landmark model
-    await faceapi.nets.faceRecognitionNet.loadFromUri("/models"); // Load Face Recognition model
-    setFaceApiLoading(false); // Set loading to false once models are loaded
-  };
-
-  // Start the video stream
-  const startVideo = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-    videoRef.current.srcObject = stream;
-  };
-
-  useEffect(() => {
-    loadModels();
-  }, []);
 
   const handlePostLike = async (postId) => {
     try {
@@ -122,12 +135,12 @@ const Profile = () => {
   const updateVerificationStatus = async (status) => {
     try {
       await axios.put(
-        "https://fly-book-server.onrender.com/profile/verification",
+        "https://api.flybook.com.bd/profile/verification",
         { verificationStatus: status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Verification status updated successfully!");
-      refetch(); // Update the user's data
+      refetch();
     } catch (error) {
       console.error("Error updating verification status:", error);
       toast.error("Failed to update verification status.");
@@ -143,10 +156,10 @@ const Profile = () => {
           .withFaceDescriptors();
 
         if (detections.length > 0) {
-          setVerificationStatus("Face Verified"); // Set verification status to success
+          setVerificationStatus("Face Verified");
           await updateVerificationStatus(true);
-          clearInterval(detectionInterval); // Stop further detection
-          stopCamera(); // Stop the camera after verification
+          clearInterval(detectionInterval);
+          stopCamera();
         } else {
           setVerificationStatus("No Face Detected");
         }
@@ -154,23 +167,20 @@ const Profile = () => {
     };
   };
 
-  // Stop the video camera
   const stopCamera = () => {
     const stream = videoRef.current.srcObject;
     setIsVideoStarted(false);
     if (stream) {
       const tracks = stream.getTracks();
-      tracks.forEach((track) => track.stop()); // Stop all tracks (video and audio)
-      videoRef.current.srcObject = null; // Disconnect the stream from the video element
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
 
-  // Start the video and verification process when the button is clicked
   const startVerification = () => {
     setIsVideoStarted(true);
     startVideo().then(startDetection);
   };
-
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
@@ -178,10 +188,9 @@ const Profile = () => {
       toast.error("Please select an image to upload.");
       return;
     }
-  
+
     setLoadingUpload(true);
-  
-    // Image compression options
+
     let compressedFile = file;
     const options = {
       maxSizeMB: 0.03,
@@ -189,26 +198,25 @@ const Profile = () => {
       useWebWorker: true,
       mimeType: "image/webp",
     };
-  
+
     try {
-      // Compress the image iteratively until size < 10KB
       while (compressedFile.size > 30 * 1024) {
         compressedFile = await imageCompression(compressedFile, options);
       }
-  
+
       const formData = new FormData();
       formData.append("image", compressedFile);
-  
+
       const response = await axios.post(
         `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
         formData
       );
-  
+
       if (response.data.success) {
         const imageUrl = response.data.data.url;
-  
+
         await axios.put(
-          "https://fly-book-server.onrender.com/profile/update",
+          "https://api.flybook.com.bd/profile/update",
           { profileImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -221,10 +229,9 @@ const Profile = () => {
       console.error("Error uploading image:", error);
       toast.error("Something went wrong. Please try again.");
     }
-  
+
     setLoadingUpload(false);
   };
-  
 
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
@@ -232,38 +239,33 @@ const Profile = () => {
       toast.error("Please select an image to upload.");
       return;
     }
-  
+
     setCoverLoading(true);
-  
-    // Image compression options
+
     const options = {
-     maxSizeMB: 0.03,
+      maxSizeMB: 0.03,
       maxHeightOrWidth: 500,
       useWebWorker: true,
-    mimeType: "image/webp",
+      mimeType: "image/webp",
     };
-  
+
     try {
-      // Compress the image
       const compressedFile = await imageCompression(file, options);
-  
-      // Create FormData and append compressed image
+
       const formData = new FormData();
       formData.append("image", compressedFile);
-  
-      // Upload image to ImgBB
+
       const response = await axios.post(
         `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
         formData
       );
-  
+
       if (response.data.success) {
         const imageUrl = response.data.data.url;
         console.log(imageUrl);
-  
-        // Update cover image URL
+
         await axios.put(
-          "https://fly-book-server.onrender.com/profile/cover/update",
+          "https://api.flybook.com.bd/profile/cover/update",
           { coverImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -276,12 +278,13 @@ const Profile = () => {
       console.error("Error uploading image:", error);
       alert("Something went wrong. Please try again.");
     }
-  
+
     setCoverLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("notify");
     refetch();
     navigate("/login");
   };
@@ -302,7 +305,6 @@ const Profile = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdateLogin(true);
-    // Create FormData object to capture form inputs
     const formData = new FormData(e.target);
     const updateDetails = {
       work: formData.get("work"),
@@ -314,7 +316,7 @@ const Profile = () => {
 
     try {
       const response = await axios.put(
-        "https://fly-book-server.onrender.com/profile/updateDetails",
+        "https://api.flybook.com.bd/profile/updateDetails",
         updateDetails,
         {
           headers: {
@@ -333,6 +335,81 @@ const Profile = () => {
       toast.error(error.response?.data?.error || "Failed to update profile.");
     }
     setUpdateLogin(false);
+  };
+
+  const handleUpdateLocation = async () => {
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const { latitude, longitude } = position.coords;
+      const updateDetails = { userLocation: { latitude, longitude } };
+
+      const response = await axios.put(
+        "https://api.flybook.com.bd/profile/updateDetails/location",
+        updateDetails,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.status === 200) {
+        toast.success("Location updated successfully!");
+        refetch();
+      } else {
+        throw new Error("Unexpected response from server");
+      }
+    } catch (error) {
+      let errorMessage;
+      if (error instanceof GeolocationPositionError) {
+        errorMessage = "Enable location services to update.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else {
+        errorMessage = "Something went wrong. Try again!";
+      }
+      toast.error(errorMessage);
+    } finally {
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) {
+      toast.error("Note cannot be empty!");
+      return;
+    }
+
+    try {
+      const response = await axiosPublic.post(
+        "/notes/add",
+        { content: newNote },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setNotes([...notes, response.data.note]);
+        setNewNote('');
+        setShowNoteModal(false);
+        toast.success("Note added successfully!");
+      }
+    } catch (error) {
+      toast.error("Failed to add note");
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    try {
+      const response = await axiosPublic.delete(
+        `/notes/${noteId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setNotes(notes.filter(note => note._id !== noteId));
+        toast.success("Note deleted successfully!");
+      }
+    } catch (error) {
+      toast.error("Failed to delete note");
+    }
   };
 
   return (
@@ -425,7 +502,7 @@ const Profile = () => {
               </div>
             </div>
           </div>
-          <div className="face-verification flex justify-between px-2 mt-4 lg:mt-0 lg:justify-end lg:gap-5">
+          <div className="face-verification flex px-2 mt-4 lg:mt-0 justify-end gap-3 lg:gap-5">
             <button
               className="btn"
               onClick={() => document.getElementById("my_modal_3").showModal()}
@@ -445,19 +522,36 @@ const Profile = () => {
               />{" "}
               <span className=" text-sm lg:text-lg">My Library</span>
             </Link>
-            <button className="btn">
-              {" "}
-              <img
-                className=" w-4 lg:w-9 hidden lg:block "
-                src={pChannel}
-                alt=""
-              />{" "}
-              <span className=" text-sm lg:text-lg">Channel</span>
-            </button>
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn text-lg lg:text-xl"
+              >
+                <HiDotsHorizontal />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-64 lg:w-72 p-2 shadow"
+              >
+                <li>
+                  <div className=" flex justify-center lg:justify-start">
+                    <p
+                      onClick={handleUpdateLocation}
+                      className=" flex items-center gap-1 bg-gray-50 mt-2 w-fit p-2 rounded-md shadow-md lg:shadow-none text-sm lg:text-base lg:hover:shadow-md cursor-pointer"
+                    >
+                      <span className=" text-xl lg:text-2xl text-rose-500 ">
+                        <MdEditLocationAlt />
+                      </span>{" "}
+                      Update your location
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
             <dialog id="my_modal_3" className="modal">
               <div className="modal-box">
                 <form method="dialog">
-                  {/* if there is a button in form, it will close the modal */}
                   <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                     ✕
                   </button>
@@ -511,6 +605,7 @@ const Profile = () => {
             </dialog>
           </div>
         </div>
+
         <div className=" lg:grid lg:grid-cols-5 mt-2">
           <div className=" col-span-2 lg:sticky lg:top-0 mb-5 lg:h-fit">
             <div className=" bg-gray-50 p-3 rounded-xl">
@@ -600,7 +695,6 @@ const Profile = () => {
                 <dialog id="my_modal_4" className="modal">
                   <div className="modal-box">
                     <form method="dialog">
-                      {/* if there is a button in form, it will close the modal */}
                       <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                         ✕
                       </button>
@@ -679,11 +773,11 @@ const Profile = () => {
               <h1 className=" text-xl lg:text-2xl font-medium py-1 lg:py-2 mb-2 border-b-2">
                 Book Fiends
               </h1>
-              <div className=" grid grid-cols-3">
+              <div className=" grid gap-2 grid-cols-3">
                 {allFriends.map((friend) => (
                   <Link
                     to={`/profile/${friend._id}`}
-                    className="lg:w-[130px] lg:h-[160px] w-[100px] h-[140px] bg-white shadow-sm rounded-lg flex flex-col items-center"
+                    className="lg:w-[130px] lg:h-[160px] w-[100px] h-[160px] bg-white shadow-sm rounded-lg flex flex-col items-center"
                     key={friend._id}
                   >
                     <div className="w-[100px] lg:w-[130px] h-[140px]">
@@ -700,6 +794,43 @@ const Profile = () => {
                     </div>
                   </Link>
                 ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-xl mt-3">
+              <div className="flex justify-between items-center border-b-2 pb-2">
+                <h1 className="text-xl lg:text-2xl font-medium">My Notes</h1>
+                <button 
+                  onClick={() => setShowNoteModal(true)}
+                  className="btn btn-sm bg-gray-100"
+                >
+                  Add Note
+                </button>
+              </div>
+              
+              <div className="mt-3 space-y-2">
+                {notes.map((note) => (
+                  <div key={note._id} className="bg-white p-3 rounded-lg shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <div className="flex gap-2 items-start">
+                        <span className="text-gray-500 mt-1"><FaNoteSticky /></span>
+                        <p className="text-sm lg:text-base whitespace-pre-wrap">{note.content}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteNote(note._id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <RiDeleteBin6Line />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(note.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+                
+                {notes.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">No notes yet</p>
+                )}
               </div>
             </div>
           </div>
@@ -747,6 +878,21 @@ const Profile = () => {
                         : `${post.description.slice(0, 220)}...`}
                     </pre>
                   </div>
+                  {post.pdf && (
+                        <div className="px-4 py-3 bg-gray-100 mt-2 rounded-md mx-4">
+                          <div className="flex items-center gap-2">
+                            <FaFilePdf className="text-red-600 text-xl" />
+                            <a 
+                              href={post.pdf}
+                              target="_blank"
+                              rel="noopener noreferrer" 
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              View PDF
+                            </a>
+                          </div>
+                        </div>
+                      )}
                   {post.image && (
                     <figure className="w-full h-full lg:overflow-hidden flex justify-center items-center bg-gray-100">
                       <img
@@ -787,6 +933,39 @@ const Profile = () => {
           </div>
         </div>
       </div>
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-4 rounded-lg w-[90%] max-w-md relative">
+            <button 
+              onClick={() => setShowNoteModal(false)} 
+              className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+            <h2 className="text-lg font-medium mb-3">Add New Note</h2>
+            <textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              className="w-full h-32 p-2 border rounded-lg mb-3"
+              placeholder="Write your note here..."
+            />
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setShowNoteModal(false)}
+                className="btn btn-sm"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAddNote}
+                className="btn btn-sm btn-primary"
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className=" mt-10">
         <DownNav />
       </div>

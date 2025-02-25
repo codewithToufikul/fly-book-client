@@ -7,7 +7,7 @@ import usePublicAxios from "../../Hooks/usePublicAxios";
 import heartfill from "../../assets/heart.png";
 import toast from "react-hot-toast";
 import useUser from "../../Hooks/useUser";
-import { FaRegHeart } from "react-icons/fa";
+import { FaRegHeart, FaFilePdf } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 
@@ -16,6 +16,7 @@ const PublicOpinion = () => {
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
   const [expandedPosts, setExpandedPosts] = useState({});
+  const [likingPosts, setLikingPosts] = useState({});
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -32,6 +33,8 @@ const PublicOpinion = () => {
 
   const handlePostLike = async (postId) => {
     try {
+      setLikingPosts(prev => ({...prev, [postId]: true}));
+      
       const response = await axiosPublic.post(
         "/opinion/like",
         { postId },
@@ -48,11 +51,15 @@ const PublicOpinion = () => {
       }
     } catch (error) {
       console.error("Error liking post:", error);
+    } finally {
+      setLikingPosts(prev => ({...prev, [postId]: false}));
     }
   };
 
   const handleUnlike = async (postId) => {
     try {
+      setLikingPosts(prev => ({...prev, [postId]: true}));
+
       const response = await axiosPublic.post(
         "/opinion/unlike",
         { postId },
@@ -69,6 +76,8 @@ const PublicOpinion = () => {
       }
     } catch (error) {
       console.error("Error liking post:", error);
+    } finally {
+      setLikingPosts(prev => ({...prev, [postId]: false}));
     }
   };
 
@@ -81,6 +90,10 @@ const PublicOpinion = () => {
         </div>
       </div>
     );
+  }
+
+  const handleUpcoming = ()=>{
+    toast.error('Features Upcoming !')
   }
   return (
     <div>
@@ -96,7 +109,6 @@ const PublicOpinion = () => {
               .reverse()
               .map((post) => {
                 return (
-                  // Add the return keyword here
                   <div
                     key={post._id}
                     className="card bg-gray-50 shadow-sm rounded-md"
@@ -128,7 +140,7 @@ const PublicOpinion = () => {
                           whiteSpace: "pre-wrap",
                           wordWrap: "break-word",
                         }}
-                        className="text-sm lg:text-base w-fit"
+                        className="text-sm lg:text-base w-fit whitespace-pre-wrap"
                         onClick={() => toggleExpand(post._id)}
                       >
                         {expandedPosts[post._id] ? (
@@ -144,6 +156,23 @@ const PublicOpinion = () => {
                           </>
                         )}
                       </pre>
+
+                      {post.pdf && (
+                        <div className="px-4 py-3 bg-gray-100 mt-2 rounded-md mx-4">
+                          <div className="flex items-center gap-2">
+                            <FaFilePdf className="text-red-600 text-xl" />
+                            <a 
+                              href={post.pdf}
+                              target="_blank"
+                              rel="noopener noreferrer" 
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              View PDF
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
                     {post.image && (
                       <figure className="w-full h-full overflow-hidden flex justify-center items-center bg-gray-100">
@@ -156,27 +185,29 @@ const PublicOpinion = () => {
 
                     <div className="p-5 flex justify-between items-center">
                       <div className="flex items-center gap-1">
-                        {user && post.likedBy?.includes(user.id) ? (
+                        {likingPosts[post._id] ? (
+                          <div className="w-8 lg:w-10 h-8 lg:h-10 mr-2 animate-spin border-2 border-gray-300 border-t-red-500 rounded-full"></div>
+                        ) : user && post.likedBy?.includes(user.id) ? (
                           <img
                             onClick={() => handleUnlike(post._id)}
-                            className=" w-8 lg:w-10 mr-2 cursor-pointer"
+                            className="w-8 lg:w-10 mr-2 cursor-pointer"
                             src={heartfill}
                             alt=""
                           />
                         ) : (
                           <h1
                             onClick={() => handlePostLike(post._id)}
-                            className=" cursor-pointer text-[32px] mr-2"
+                            className="cursor-pointer text-[32px] mr-2"
                           >
                             <FaRegHeart />
                           </h1>
                         )}
 
-                        <p className=" text-sm lg:text-lg font-medium">
+                        <p className="text-sm lg:text-lg font-medium">
                           {post.likes} Likes
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 cursor-pointer">
+                      <div onClick={handleUpcoming} className="flex items-center gap-1 cursor-pointer">
                         <p className=" text-sm lg:text-lg font-medium">Share</p>
                       </div>
                     </div>

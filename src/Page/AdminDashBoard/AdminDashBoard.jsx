@@ -2,15 +2,16 @@ import React from "react";
 import { FaCodePullRequest } from "react-icons/fa6";
 import { ImBooks } from "react-icons/im";
 import { IoLibraryOutline, IoPeopleSharp } from "react-icons/io5";
-import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { MdCategory, MdOutlineDoNotDisturb } from "react-icons/md";
 import { TbArrowsTransferUpDown, TbBooks } from "react-icons/tb";
 import { VscGitPullRequestCreate } from "react-icons/vsc";
 import { Link, NavLink, Outlet } from "react-router";
 import logo from "../../assets/logo.png";
 import { TiThMenuOutline } from "react-icons/ti";
 import { BsFilePost } from "react-icons/bs";
-import { FaHome } from "react-icons/fa";
+import { FaFilePdf, FaHome } from "react-icons/fa";
 import { IoMdAddCircleOutline } from "react-icons/io";
+import { BiSolidBookAdd } from "react-icons/bi";
 
 
 const AdminDashBoard = () => {
@@ -56,6 +57,91 @@ const AdminDashBoard = () => {
                 <IoMdAddCircleOutline />
                 </span>
                 Add Post
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/all-posts"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <BsFilePost />
+                </span>
+                All Posts
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/add-category"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <MdCategory />
+                </span>
+                Add Category
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/thesis-post"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <IoMdAddCircleOutline />
+                </span>
+                Add Research Articles
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/add-pdf"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <BiSolidBookAdd />
+                </span>
+                Add PDF book
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/all-pdf-books"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <FaFilePdf />
+                </span>
+                All PDF Books
               </NavLink>
             </li>
             <li className="">

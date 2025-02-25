@@ -32,7 +32,7 @@ const MyOnindoAllBook = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await axiosPublic.delete(`https://fly-book-server.onrender.com/onindo/delete/${bookId}`);
+          const res = await axiosPublic.delete(`https://api.flybook.com.bd/onindo/delete/${bookId}`);
           if (res.data.success) {
             Swal.fire("Removed!", "Your book has been removed!", "success");
             refetch();

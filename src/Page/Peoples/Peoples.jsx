@@ -22,7 +22,7 @@ const Peoples = () => {
   const [reqFriends, setReqFriend] = useState([]);
   const [sendReq, setSendReq] = useState([]);
   const token = localStorage.getItem("token");
-  const socket = io("https://fly-book-server.onrender.com");
+  const socket = io("https://api.flybook.com.bd");
 
 
   const fetchRequests = async () => {
@@ -91,6 +91,15 @@ const Peoples = () => {
       );
       toast.success("Request Accepted !");
       fetchRequests();
+      socket.emit("sendRequest", {
+        senderId: user.id,
+        senderName: user.name,
+        senderProfile: user.profileImage,
+        receoientId: recipientId,
+        type: "fndReq",
+        notifyText: "Friend Request Accept",
+        roomId: [recipientId],
+      });
       refetch();
     } catch (error) {
       console.log(error);

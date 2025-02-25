@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import imageCompression from "browser-image-compression";
-
+import useCategories from "../../Hooks/useCategories";
 const AddadminPost = () => {
   const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
   const token = localStorage.getItem("token");
+  const {categories, isLoading} = useCategories();
   const axiosPublic = usePublicAxios();
 
   const [formData, setFormData] = useState({
@@ -109,6 +110,11 @@ const AddadminPost = () => {
       toast.error("Please select an image!");
     }
   };
+  if(isLoading){
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+    </div>
+  }
 
   return (
     <div className="flex flex-col h-screen items-center justify-center">
@@ -141,13 +147,11 @@ const AddadminPost = () => {
                     value={formData.category}
                     onChange={handleInputChange}
                   >
-                    <option disabled value="">
-                      Select One
-                    </option>
-                    <option>History</option>
-                    <option>Science</option>
-                    <option>Life Style</option>
-                    <option>Book War</option>
+                    {categories.map((category) => (
+                      <option key={category._id} value={category.category}>
+                        {category.category}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
