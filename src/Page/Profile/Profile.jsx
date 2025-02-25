@@ -894,7 +894,7 @@ const Profile = () => {
                         </div>
                       )}
                   {post.image && (
-                    <figure className="w-full h-full lg:overflow-hidden flex justify-center items-center bg-gray-100">
+                    <figure className="w-full h-full md:w-full lg:overflow-hidden flex justify-center items-center bg-gray-100">
                       <img
                         className="w-full h-full object-cover"
                         src={post.image}
