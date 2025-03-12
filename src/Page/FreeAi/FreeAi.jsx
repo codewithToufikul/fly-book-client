@@ -1,14 +1,12 @@
-import React from "react";
 import Navbar from "../../Components/Navbar/Navbar";
 import DownNav from "../../Components/DownNav/DownNav";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-
-const Thesis = () => {
+const FreeAi = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("https://api.flybook.com.bd/thesis").then((res) => res.json()),
+      fetch("https://api.flybook.com.bd/admin/post-ai").then((res) => res.json()),
   });
 
   if (isLoading) {
@@ -26,10 +24,10 @@ const Thesis = () => {
       <Navbar />
       <div className=" max-w-[1220px] mx-auto px-2">
         <h1 className=" hidden lg:block text-3xl font-medium py-6 px-4 bg-slate-100 ">
-          Explore Knowledge Boundaries
+          Ai Related Posts
         </h1>
         <h1 className=" lg:hidden block text-xl lg:text-3xl font-medium py-3 lg:py-6 px-4 bg-slate-100 ">
-          Explore Knowledge Boundaries
+            Ai Related Posts
         </h1>
         <div className=" mt-2 max-w-[650px] mx-auto">
           {data
@@ -37,34 +35,31 @@ const Thesis = () => {
             .reverse()
             .map((post) => (
               <div className=" p-3 border-2 rounded-lg hover:shadow-xl shadow-md cursor-pointer">
-              <Link
-              to={`/thesis/${post._id}`}
-                key={post._id}
-              >
-                <div className=" flex items-center gap-2">
-                  <p className=" text-xs italic lg:text-sm">
-                    {post.time.slice(0, -6) + post.time.slice(-3)}
+                <Link to={`/ai-post/${post._id}`} key={post._id}>
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs italic lg:text-sm">
+                      {post.time.slice(0, -6) + post.time.slice(-3)}
+                    </p>
+                    <p className=" text-xs italic lg:text-sm">{post.date}</p>
+                  </div>
+                  <h2 className=" text-lg font-semibold">{post.title}</h2>
+                  <p className=" text-base">
+                    {window.innerWidth <= 768
+                      ? post.message.slice(0, 80)
+                      : post.message.slice(0, 120)}
+                    ...
+                    <span className=" text-blue-400">see more</span>
                   </p>
-                  <p className=" text-xs italic lg:text-sm">{post.date}</p>
-                </div>
-                <h2 className=" text-lg font-semibold">{post.title}</h2>
-                <p className=" text-base">
-                  {window.innerWidth <= 768
-                    ? post.message.slice(0, 80)
-                    : post.message.slice(0, 120)}
-                  ...
-                  <span className=" text-blue-400">see more</span>
-                </p>
-              </Link>
+                </Link>
               </div>
             ))}
         </div>
       </div>
-      <div>
+      <div className=" mt-12">
         <DownNav />
       </div>
     </div>
   );
 };
 
-export default Thesis;
+export default FreeAi;

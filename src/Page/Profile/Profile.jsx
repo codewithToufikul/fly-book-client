@@ -484,9 +484,14 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-              <h1 className="text-lg lg:text-3xl font-semibold">
-                {user?.name}
-              </h1>
+              <div>
+                <h1 className="text-lg lg:text-3xl font-semibold">
+                  {user?.name}
+                </h1>
+                <p className="text-sm lg:text-base text-gray-500">
+                  @{user?.userName}
+                </p>
+              </div>
             </div>
             <div>
               <div

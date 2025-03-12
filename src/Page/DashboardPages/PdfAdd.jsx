@@ -1,10 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Initialize PDF.js worker
+const initPdfJs = async () => {
+  try {
+    const worker = await import('pdfjs-dist/build/pdf.worker.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
+  } catch (error) {
+    console.error('Error initializing PDF.js worker:', error);
+  }
+};
 
 const PdfAdd = () => {
   const [uploadMethod, setUploadMethod] = useState("");
   const [bookCategory, setBookCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  const CLOUDINARY_UPLOAD_PRESET = import.meta.env
+  .VITE_CLOUDINARY_UPLOAD_PRESET;
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const [formData, setFormData] = useState({
     bookName: "",
     writerName: "",
@@ -13,6 +27,11 @@ const PdfAdd = () => {
     coverPhoto: null,
     description: "",
   });
+  const [pdfMetadata, setPdfMetadata] = useState({ pageCount: 0, fileSize: 0 });
+
+  useEffect(() => {
+    initPdfJs();
+  }, []);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -30,30 +49,121 @@ const PdfAdd = () => {
     }));
   };
 
+  const calculatePdfMetadata = async (file) => {
+    try {
+      // Calculate file size in KB with precision
+      const fileSizeBytes = file.size;
+      const fileSizeKB = (fileSizeBytes / 1024).toFixed(2);
+      
+      // Create a URL from the file
+      const fileUrl = URL.createObjectURL(file);
+      
+      // Load and get page count
+      const loadingTask = pdfjsLib.getDocument(fileUrl);
+      const pdf = await loadingTask.promise;
+      const pageCount = pdf.numPages;
+      
+      // Clean up
+      URL.revokeObjectURL(fileUrl);
+      
+      console.log('PDF Metadata:', { 
+        pageCount, 
+        fileSize: fileSizeKB,
+        originalSize: file.size,
+        unit: 'KB'
+      }); // Debug log
+      
+      return { 
+        pageCount, 
+        fileSize: Number(fileSizeKB) // Convert to number to ensure proper type
+      };
+    } catch (error) {
+      console.error('Error calculating PDF metadata:', error);
+      // Calculate at least the file size if page count fails
+      const fallbackSize = (file.size / 1024).toFixed(2); // Convert to KB
+      return { 
+        pageCount: 0, 
+        fileSize: Number(fallbackSize) // Convert to number
+      };
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true)
-    const formDataToSend = new FormData();
-    formDataToSend.append("bookName", formData.bookName);
-    formDataToSend.append("writerName", formData.writerName);
-    formDataToSend.append("category", bookCategory);
-    formDataToSend.append("uploadMethod", uploadMethod);
-    formDataToSend.append("description", formData.description);
-  
-    if (uploadMethod === "Via Link") {
-      formDataToSend.append("pdfLink", formData.pdfLink);
-    } else if (uploadMethod === "Direct Upload" && formData.pdfFile) {
-      formDataToSend.append("pdfFile", formData.pdfFile);
-    }
-  
-    if (formData.coverPhoto) {
-      formDataToSend.append("coverPhoto", formData.coverPhoto);
-    }
-  
+    setLoading(true);
+    
     try {
+      let metadata = { pageCount: 0, fileSize: 0 };
+      
+      // Calculate metadata first if it's a direct upload
+      if (uploadMethod === "Direct Upload" && formData.pdfFile) {
+        metadata = await calculatePdfMetadata(formData.pdfFile);
+        console.log('Metadata before upload:', metadata); // Debug log
+        
+        if (metadata.pageCount === 0) {
+          toast.warning("Could not read PDF page count, but continuing upload...");
+        }
+        if (metadata.fileSize === 0) {
+          toast.warning("Could not calculate file size, but continuing upload...");
+        }
+      }
+
+      // Upload cover photo to Cloudinary
+      const coverPhotoData = new FormData();
+      coverPhotoData.append('file', formData.coverPhoto);
+      coverPhotoData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      
+      const coverPhotoRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: 'POST',
+          body: coverPhotoData,
+        }
+      );
+      const coverPhotoResult = await coverPhotoRes.json();
+      const coverUrl = coverPhotoResult.secure_url;
+
+      // Handle PDF upload based on method
+      let pdfUrl = '';
+
+      if (uploadMethod === "Via Link") {
+        pdfUrl = formData.pdfLink;
+      } else if (uploadMethod === "Direct Upload" && formData.pdfFile) {
+        // Upload PDF to Cloudinary
+        const pdfData = new FormData();
+        pdfData.append('file', formData.pdfFile);
+        pdfData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        const pdfRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`,
+          {
+            method: 'POST',
+            body: pdfData,
+          }
+        );
+        const pdfResult = await pdfRes.json();
+        pdfUrl = pdfResult.secure_url;
+      }
+
+      // Send data to backend
+      const bookData = {
+        bookName: formData.bookName,
+        writerName: formData.writerName,
+        category: bookCategory,
+        uploadMethod,
+        description: formData.description,
+        pdfUrl,
+        coverUrl,
+        pageCount: metadata.pageCount,
+        fileSize: metadata.fileSize || 0 // Provide fallback if undefined
+      };
+
       const response = await fetch("https://api.flybook.com.bd/upload", {
         method: "POST",
-        body: formDataToSend,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookData),
       });
   
       const result = await response.json();
@@ -78,7 +188,6 @@ const PdfAdd = () => {
       toast.error("Failed to upload. Try again.");
       setLoading(false)
     }
-    setLoading(false)
   };
   
 

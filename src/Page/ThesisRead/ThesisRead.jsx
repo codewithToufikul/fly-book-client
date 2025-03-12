@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import Navbar from "../../Components/Navbar/Navbar";
 import DownNav from "../../Components/DownNav/DownNav";
 import { useQuery } from "@tanstack/react-query";
+import { Linkify } from 'react-linkify';
 
 const ThesisRead = () => {
   const { postId } = useParams();

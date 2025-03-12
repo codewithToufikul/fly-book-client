@@ -167,7 +167,6 @@ const Peoples = () => {
       }
     });
   };
-  
 
   if (isLoading) {
     <div className="flex items-center justify-center h-screen">

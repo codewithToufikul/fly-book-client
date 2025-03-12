@@ -31,8 +31,7 @@ const PdfBook = () => {
         </div>
       </div>
     );
-  }
-  console.log(pdfBooks);
+  };
   const uploadBook = pdfBooks.filter(book => book.uploadMethod == "Direct Upload")
   const linkBook = pdfBooks.filter(book => book.uploadMethod == "Via Link")
   const handleFilter = (filterBy) => {

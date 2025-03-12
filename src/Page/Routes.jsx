@@ -9,7 +9,7 @@ import ResetPassword from "./ResetPassword/ResetPassword";
 import ErrorPage from "./ErrorPage/ErrorPage";
 import Peoples from "./Peoples/Peoples";
 import PublicOpinion from "./PublicOpinion/PublicOpinion";
-import UserProfile from "./userProfile/userProfile";
+import UserProfile from "./UserProfile/UserProfile";
 import MyLibrary from "./MyLibrary/MyLibrary";
 import MyLibraryBook from "../Components/MyLibraryBook/MyLibraryBook";
 import UserLibrary from "./UserLibrary/UserLibrary";
@@ -36,6 +36,7 @@ import MassegeBox from "../Components/MassegeBox/MassegeBox";
 import Notifications from "./Notifications/Notifications";
 import ChatList from "./ChatList/ChatList";
 import Thesis from "./Thesis/Thesis";
+import FreeAi from "./FreeAi/FreeAi";
 import ThesisPost from "./DashboardPages/ThesisPost";
 import ThesisRead from "./ThesisRead/ThesisRead";
 import ContractUs from "./ContractUs/ContractUs";
@@ -46,6 +47,11 @@ import PdfAdd from "./DashboardPages/PdfAdd";
 import ViewPdfBook from "./ViewPdfBook/ViewPdfBook";
 import AddCategory from "./DashboardPages/AddCategory";
 import AllAdminPdfBooks from "./DashboardPages/AllAdminPdfBooks";
+import AiPosts from "./DashboardPages/AiPosts";
+import ViewAiPost from "./ViewAiPost/ViewAiPost";
+import Organizations from "./Organizations/Organizations";
+import AddOrganization from "./AddOrganization/AddOrganization";
+import OrganizationDetails from "./OrganizationDetails/OrganizationDetails";
 
 export const router = createBrowserRouter([
     {
@@ -172,6 +178,10 @@ export const router = createBrowserRouter([
                 element: <AdminRoute><PrivateRoute><ThesisPost/></PrivateRoute></AdminRoute>
             },
             {
+                path: '/dashboard/add-ai-post',
+                element: <AdminRoute><PrivateRoute><AiPosts/></PrivateRoute></AdminRoute>
+            },
+            {
                 path: '/dashboard/all-posts',
                 element: <AdminRoute><PrivateRoute><AdminPosts/></PrivateRoute></AdminRoute>
             },
@@ -226,6 +236,25 @@ export const router = createBrowserRouter([
     },{
         path: "/view-pdf-book/:id",
         element: <ViewPdfBook/>
+    },
+    {
+        path: '/free-ai',
+        element: <FreeAi/>
+    },{
+        path: '/ai-post/:id',
+        element: <ViewAiPost/>
+    },
+    {
+        path: '/organizations',
+        element: <Organizations/>
+    },
+    {
+        path: '/add-organization',
+        element: <AddOrganization/>
+    },
+    {
+        path: '/organization/:orgId',
+        element: <OrganizationDetails/>
     },
     {
         path: '*',

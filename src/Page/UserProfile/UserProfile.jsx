@@ -227,8 +227,8 @@ const UserProfile = () => {
                 <h1 className="text-lg lg:text-3xl font-semibold">
                   {userAt?.name}
                 </h1>
-                <p className="lg:text-lg text-slate-400">
-                  {myData?.friends?.includes(userId) ? "Your Friend" : ""}
+                <p className="text-sm lg:text-base text-gray-500">
+                  @{userAt?.userName}
                 </p>
               </div>
               </div>

@@ -14,6 +14,7 @@ import useUser from "../../Hooks/useUser";
 import { Link, useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import loadingLogo from "../../assets/load.webp"
+import organization from "../../assets/partners.png"
 import near from "../../assets/near.png"
 
 const Categories = () => {
@@ -151,6 +152,17 @@ const Categories = () => {
             </div>
             <h2 className=" text-lg font-medium">Donate Your Book</h2>
           </div>
+        </li>
+        <li>
+          <Link
+            to={"/organizations"}
+            className=" flex items-center gap-3 hover:bg-gray-200 w-[400px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+          >
+            <div className=" w-8 ">
+              <img className=" w-full" src={organization} alt="" />
+            </div>
+            <h2 className=" text-lg font-medium">Unlocking your potential with-</h2>
+          </Link>
         </li>
         <li onClick={handleUpcoming}>
           <div className=" flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">

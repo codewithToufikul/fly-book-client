@@ -119,6 +119,23 @@ const AdminDashBoard = () => {
                     ? "pending"
                     : "btn flex justify-start bg-white"
                 }
+                to={"/dashboard/add-ai-post"}
+              >
+                <span className="text-xl lg:text-2xl">
+                <IoMdAddCircleOutline />
+                </span>
+                Add Ai Post
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
                 to={"/dashboard/add-pdf"}
               >
                 <span className="text-xl lg:text-2xl">
