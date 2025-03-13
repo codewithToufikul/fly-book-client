@@ -42,7 +42,8 @@ const Categories = () => {
   };
 
   return (
-    <div className=" sticky top-[110px] z-40 hidden lg:block">
+    <div className="max-h-[calc(100vh-110px)] overflow-y-auto">
+    <div className=" sticky  z-40 hidden lg:block">
       {user ? (
         <Link to={"/my-profile"} className=" flex items-center space-x-4">
           <div className="w-[50px] h-[50px] p-1 border-2 rounded-full border-green-200">
@@ -200,6 +201,7 @@ const Categories = () => {
           </div>
         </li>
       </ul>
+    </div>
     </div>
   );
 };

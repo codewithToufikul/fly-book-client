@@ -5,6 +5,7 @@ import { IoLibraryOutline, IoPeopleSharp } from "react-icons/io5";
 import { MdCategory, MdOutlineDoNotDisturb } from "react-icons/md";
 import { TbArrowsTransferUpDown, TbBooks } from "react-icons/tb";
 import { VscGitPullRequestCreate } from "react-icons/vsc";
+import { SiAwsorganizations } from "react-icons/si";
 import { Link, NavLink, Outlet } from "react-router";
 import logo from "../../assets/logo.png";
 import { TiThMenuOutline } from "react-icons/ti";
@@ -204,14 +205,15 @@ const AdminDashBoard = () => {
                     ? "pending"
                     : "btn flex justify-start bg-white"
                 }
-                to={"/dashboard/all-books"}
+                to={"/dashboard/manage-organizations"}
               >
                 <span className="text-lg">
-                  <TbBooks />
+                <SiAwsorganizations />
                 </span>
-                All Books
+                Manage Organizations
               </NavLink>
             </li>
+            
             <li>
               <NavLink
                 className={({ isActive, isPending }) =>

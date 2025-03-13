@@ -373,6 +373,7 @@ const Home = () => {
               <span className="loading loading-dots loading-lg"></span>
             </div>
           ) : (
+
             <div className="space-y-5">
               {categoryLoading ? (
                 <div className="flex flex-col items-center justify-center min-h-[200px]">

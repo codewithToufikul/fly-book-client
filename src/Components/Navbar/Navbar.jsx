@@ -37,6 +37,7 @@ import { IoIosSearch } from "react-icons/io";
 import { BsFillChatSquareTextFill } from "react-icons/bs";
 import { io } from "socket.io-client";
 import logoWp from "../../assets/load.webp";
+import { FcOrganization } from "react-icons/fc";
 
 const Navbar = () => {
   const { user, loading, refetch } = useUser();
@@ -506,6 +507,15 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Donate Your Book</h2>
                     </div>
                   </li>
+                  <li>
+          <Link
+            to={"/organizations"}
+            className=" flex items-center gap-3 hover:bg-gray-200 hover:shadow-md rounded-md cursor-pointer"
+          >
+            <p className=" text-xl"><FcOrganization /></p>
+            <h2 className=" text-sm">Unlocking your potential with-</h2>
+          </Link>
+        </li>
                   <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">

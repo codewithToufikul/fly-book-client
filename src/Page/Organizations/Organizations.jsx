@@ -13,7 +13,7 @@ const Organizations = () => {
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch("https://api.flybook.com.bd/api/v1/organizations");
+        const response = await fetch("https://api.flybook.com.bd/api/v1/organizations/aprooved");
         const result = await response.json();
         
         if (result.success) {
@@ -68,10 +68,15 @@ const Organizations = () => {
         </div>
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto px-4 py-6 gap-4">
             <div className="text-xl md:text-2xl font-bold text-gray-700 underline text-center md:text-left">All Organizations</div>
-            <Link to="/add-organization" className="btn btn-primary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-primary-dark transition-all duration-300 flex items-center justify-center gap-2">
-                <FaPlus className="text-sm" />
-                <span>Add Your Organization</span>
-            </Link>
+            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                <Link to="/my-organizations" className="btn btn-secondary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-secondary-dark transition-all duration-300 flex items-center justify-center gap-2">
+                    <span>My Organizations</span>
+                </Link>
+                <Link to="/add-organization" className="btn btn-primary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-primary-dark transition-all duration-300 flex items-center justify-center gap-2">
+                    <FaPlus className="text-sm" />
+                    <span>Add Your Organization</span>
+                </Link>
+            </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {loading ? (
@@ -97,6 +102,23 @@ const Organizations = () => {
                   />
                 </figure>
                 <div className="card-body">
+                  <div className="flex items-center gap-3 mb-4">
+                    <img
+                      src={org.postByProfile || "https://placeholder.com/40x40"}
+                      alt={org.postByName}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div>
+                      <h3 className="font-medium">{org.postByName}</h3>
+                      <p className="text-xs text-gray-500">
+                        {new Date(org.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
                   <h2 className="card-title">{org.orgName}</h2>
                   <p className="text-sm text-gray-600">{org.description.slice(0, 100)}...</p>
                   <div className="card-actions justify-end mt-4">

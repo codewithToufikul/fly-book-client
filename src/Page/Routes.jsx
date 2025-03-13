@@ -52,6 +52,9 @@ import ViewAiPost from "./ViewAiPost/ViewAiPost";
 import Organizations from "./Organizations/Organizations";
 import AddOrganization from "./AddOrganization/AddOrganization";
 import OrganizationDetails from "./OrganizationDetails/OrganizationDetails";
+import MyOrganizations from "./MyOrganizations/MyOrganizations";
+import MyOrganizationDetails from "./MyOrganizationDetails/MyOrganizationDetails";
+import AdminManageOrg from "./DashboardPages/AdminManageOrg";
 
 export const router = createBrowserRouter([
     {
@@ -197,6 +200,10 @@ export const router = createBrowserRouter([
                 path: '/dashboard/all-pdf-books',
                 element: <AdminRoute><PrivateRoute><AllAdminPdfBooks/></PrivateRoute></AdminRoute>
             },
+            {
+                path: '/dashboard/manage-organizations',
+                element: <AdminRoute><PrivateRoute><AdminManageOrg/></PrivateRoute></AdminRoute>
+            }
             
         ]
     },{
@@ -255,6 +262,13 @@ export const router = createBrowserRouter([
     {
         path: '/organization/:orgId',
         element: <OrganizationDetails/>
+    },{
+        path: '/my-organization/:orgId',
+        element: <MyOrganizationDetails/>
+    },
+    {
+        path: '/my-organizations',
+        element: <PrivateRoute><MyOrganizations/> </PrivateRoute>
     },
     {
         path: '*',
