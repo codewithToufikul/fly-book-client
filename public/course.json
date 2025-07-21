@@ -1,0 +1,19 @@
+[
+  {
+    "courseId": "basic-computer-course-001",
+    "title": "Basic Computer Course",
+    "description": "A beginner-friendly course designed to introduce you to the fundamentals of computers, including hardware, software, and basic applications.",
+    "thumbnail": "https://i.ibb.co.com/tMK2xctq/images-3-1.jpg",
+    "instructor": {
+      "name": "LearnFree",
+      "bio": "Certified IT trainer with over 10 years of experience in teaching computer literacy.",
+      "avatar": "https://i.ibb.co.com/C32gDZc2/channels4-profile.jpg"
+    },
+    "VTitle": "What is a Computer?",
+    "videoUrl": "https://res.cloudinary.com/duyrnfagi/video/upload/v1743765917/Computer_Basics__What_Is_a_Computer__yhbvry.mp4",
+    "duration": "2:47",
+    "price": "Free",
+    "language": "English",
+    "tags": ["Computer Basics", "Beginner", "IT Literacy"]
+  }
+]

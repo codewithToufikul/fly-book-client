@@ -105,16 +105,24 @@ const ScearchPage = () => {
             <li onClick={() => sortSearch("opinions")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate === "opinions" ? "bg-gray-200" : ""}`}>Opinion</li>
             <li onClick={() => sortSearch("onindo")} className={`text-xs lg:text-lg px-1 py-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate === "onindo" ? "bg-gray-200" : ""}`}>Onindo Books</li>
             <li onClick={() => sortSearch("pdf")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate === "pdf" ? "bg-gray-200" : ""}`}>PDF Books</li>
+            <li onClick={() => sortSearch("ai")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate === "ai" ? "bg-gray-200" : ""}`}>AI Answer</li>
           </ul>
         </div>
 
+        {/* AI Results Section */}
+        {searchResults?.aiResult && searchCate !== "peoples" && searchCate !== "books" && searchCate !== "opinions" && searchCate !== "onindo" && searchCate !== "pdf" && (
+          <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${searchCate !== "ai" && searchCate !== "all" ? "hidden" : "block"}`}>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">AI Answer</h2>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <p className="text-gray-700 whitespace-pre-line">{searchResults.aiResult}</p>
+            </div>
+          </div>
+        )}
+
         <h1 className="text-2xl font-bold mb-6">Search Results</h1>
 
-        {/* Main Content Layout */}
-        <div className="lg:flex gap-6">
-          {/* Website Results Column */}
-          {(peoples?.length > 0 || opinions?.length > 0 || books?.length > 0 || onindoBooks?.length > 0 || pdfBooks?.length > 0) ? (
-            <div className="lg:w-2/3">
+        {/* Website Results */}
+        <div>
               {/* Users Section */}
               {peoples?.length > 0 && searchCate !== "books" && searchCate !== "opinions" && searchCate !== "onindo" && searchCate !== "pdf" && (
                 <div className={`category-section mb-6 p-4 border border-gray-300 rounded-lg ${searchCate !== "peoples" && searchCate !== "all" ? "hidden" : "block"}`}>
@@ -594,41 +602,35 @@ const ScearchPage = () => {
                 </div>
               )}
             </div>
-          ) : null}
 
-          {/* Google Results Column */}
-          <div className={`${(peoples?.length > 0 || opinions?.length > 0 || books?.length > 0 || onindoBooks?.length > 0 || pdfBooks?.length > 0) ? 'lg:w-1/3' : 'w-full'} lg:mt-0 mt-6`}>
-            {searchResults?.googleResults?.items?.length > 0 && (
-              <div className="sticky top-4">
-                <div className="category-section p-4 border border-gray-300 rounded-lg">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                    Web Results
-                  </h2>
-                  <ul className="space-y-4">
-                    {searchResults.googleResults.items.map((item, index) => (
-                      <li key={index} className="border-b pb-4 last:border-b-0">
-                        <a 
-                          href={item.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block hover:bg-gray-50 p-2 rounded"
-                        >
-                          <h3 className="text-lg font-medium text-blue-600 hover:underline">
-                            {item.title}
-                          </h3>
-                          <p className="text-sm text-green-700 text-ellipsis overflow-hidden whitespace-nowrap max-w-[300px]">{item.link}</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {item.snippet}
-                          </p>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+          {/* Google Results Section */}
+          {searchResults?.googleResults?.items?.length > 0 && (
+            <div className="category-section p-4 border border-gray-300 rounded-lg mt-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Web Results
+              </h2>
+              <ul className="space-y-4">
+                {searchResults.googleResults.items.map((item, index) => (
+                  <li key={index} className="border-b pb-4 last:border-b-0">
+                    <a 
+                      href={item.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block hover:bg-gray-50 p-2 rounded"
+                    >
+                      <h3 className="text-lg font-medium text-blue-600 hover:underline">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-green-700 text-ellipsis overflow-hidden whitespace-nowrap max-w-[300px]">{item.link}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {item.snippet}
+                      </p>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         {/* No Results Message */}
         {(!searchResults?.googleResults?.items?.length && 

@@ -27,7 +27,7 @@ const FreeAi = () => {
           Ai Related Posts
         </h1>
         <h1 className=" lg:hidden block text-xl lg:text-3xl font-medium py-3 lg:py-6 px-4 bg-slate-100 ">
-            Ai Related Posts
+          Ai Related Posts
         </h1>
         <div className=" mt-2 max-w-[650px] mx-auto">
           {data

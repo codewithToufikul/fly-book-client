@@ -37,25 +37,25 @@ const Thesis = () => {
             .reverse()
             .map((post) => (
               <div className=" p-3 border-2 rounded-lg hover:shadow-xl shadow-md cursor-pointer">
-              <Link
-              to={`/thesis/${post._id}`}
-                key={post._id}
-              >
-                <div className=" flex items-center gap-2">
-                  <p className=" text-xs italic lg:text-sm">
-                    {post.time.slice(0, -6) + post.time.slice(-3)}
+                <Link
+                  to={`/thesis/${post._id}`}
+                  key={post._id}
+                >
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs italic lg:text-sm">
+                      {post.time.slice(0, -6) + post.time.slice(-3)}
+                    </p>
+                    <p className=" text-xs italic lg:text-sm">{post.date}</p>
+                  </div>
+                  <h2 className=" text-lg font-semibold">{post.title}</h2>
+                  <p className=" text-base">
+                    {window.innerWidth <= 768
+                      ? post.message.slice(0, 80)
+                      : post.message.slice(0, 120)}
+                    ...
+                    <span className=" text-blue-400">see more</span>
                   </p>
-                  <p className=" text-xs italic lg:text-sm">{post.date}</p>
-                </div>
-                <h2 className=" text-lg font-semibold">{post.title}</h2>
-                <p className=" text-base">
-                  {window.innerWidth <= 768
-                    ? post.message.slice(0, 80)
-                    : post.message.slice(0, 120)}
-                  ...
-                  <span className=" text-blue-400">see more</span>
-                </p>
-              </Link>
+                </Link>
               </div>
             ))}
         </div>

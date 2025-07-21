@@ -26,7 +26,7 @@ const RecoverPass = () => {
       setLoading(false); // End loading state
     }
   };
-  
+
 
   return (
     <div className=" w-full min-h-screen flex flex-col justify-center items-center align-items-center bg-gray-50">

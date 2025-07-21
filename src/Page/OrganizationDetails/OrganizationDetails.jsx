@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGlobe } from "react-icons/fa";
 
 const OrganizationDetails = () => {
@@ -18,7 +18,7 @@ const OrganizationDetails = () => {
     };
 
     useEffect(() => {
-        const fetchOrganization = async () => { 
+        const fetchOrganization = async () => {
             try {
                 const response = await fetch(`https://api.flybook.com.bd/api/v1/organizations/${orgId}`);
                 const result = await response.json();
@@ -30,7 +30,7 @@ const OrganizationDetails = () => {
             }
         };
         fetchOrganization();
-    }, [orgId]);    
+    }, [orgId]);
 
     if (loading) {
         return (
@@ -39,7 +39,7 @@ const OrganizationDetails = () => {
             </div>
         );
     }
-    
+
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -54,9 +54,9 @@ const OrganizationDetails = () => {
         if (media.type === 'image') {
             return (
                 <div className="relative group cursor-pointer overflow-hidden rounded-xl h-[250px] md:h-[300px]">
-                    <img 
-                        src={media.url} 
-                        alt={media.caption || 'Organization media'} 
+                    <img
+                        src={media.url}
+                        alt={media.caption || 'Organization media'}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                     {media.caption && (
@@ -70,8 +70,8 @@ const OrganizationDetails = () => {
         } else if (media.type === 'video') {
             return (
                 <div className="relative rounded-xl overflow-hidden group h-[250px] md:h-[300px]">
-                    <video 
-                        controls 
+                    <video
+                        controls
                         className="w-full h-full object-cover"
                         poster={media.thumbnail}
                     >
@@ -94,7 +94,7 @@ const OrganizationDetails = () => {
             {selectedImage && (
                 <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
                     <img src={selectedImage} alt="Enlarged view" className="max-w-full max-h-[90vh] object-contain" />
-                    <button 
+                    <button
                         className="absolute top-4 right-4 text-white text-xl hover:text-gray-300"
                         onClick={() => setSelectedImage(null)}
                     >
@@ -110,8 +110,8 @@ const OrganizationDetails = () => {
                         <div className="absolute inset-0 bg-black opacity-10"></div>
                         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
                             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
-                                <img 
-                                    src={organization.profileImage || 'https://via.placeholder.com/128'} 
+                                <img
+                                    src={organization.profileImage || 'https://via.placeholder.com/128'}
                                     alt={`${organization.orgName} profile`}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
@@ -124,12 +124,14 @@ const OrganizationDetails = () => {
                                     {organization.orgName}
                                 </h1>
                                 <p className="text-base lg:text-lg text-gray-100 max-w-3xl animate-fade-in-delayed">
-                                    {organization.description.slice(0,200)}
+                                    {organization.description.slice(0, 200)}
                                 </p>
                             </div>
                         </div>
                     </div>
-
+                    <div className=" my4 px-4">
+                        <Link className="text-blue-600 text-lg hover:text-blue-800 font-medium" to={`/organization/${orgId}/activities`}>View All Activities</Link>
+                    </div>
                     {/* Content Section */}
                     <div className=" md:p-8">
                         {/* Sections */}
@@ -139,62 +141,62 @@ const OrganizationDetails = () => {
                                     <span className="bg-gradient-to-r from-blue-500 to-purple-600 w-1 h-6 rounded-full"></span>
                                     {section.title}
                                 </h2>
-                                
+
                                 <div className="flex flex-col lg:flex-row">
-                                {section.details && (
-                                    <div className="prose max-w-full lg:max-w-[50%] mb-8 text-gray-700 leading-relaxed hover:text-gray-900 transition-colors duration-300">
-                                        <p className="text-base lg:text-lg">
-                                            {expandedSections[index] 
-                                                ? section.details
-                                                : section.details.length > 300
-                                                    ? `${section.details.substring(0, 300)}...`
-                                                    : section.details
-                                            }
-                                        </p>
-                                        {section.details.length > 300 && (
-                                            <button
-                                                onClick={() => toggleSection(index)}
-                                                className="mt-2 text-blue-600 hover:text-blue-800 font-medium focus:outline-none transition-colors duration-200"
-                                            >
-                                                {expandedSections[index] ? 'See Less' : 'See More'}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
+                                    {section.details && (
+                                        <div className="prose max-w-full lg:max-w-[50%] mb-8 text-gray-700 leading-relaxed hover:text-gray-900 transition-colors duration-300">
+                                            <p className="text-base lg:text-lg">
+                                                {expandedSections[index]
+                                                    ? section.details
+                                                    : section.details.length > 300
+                                                        ? `${section.details.substring(0, 300)}...`
+                                                        : section.details
+                                                }
+                                            </p>
+                                            {section.details.length > 300 && (
+                                                <button
+                                                    onClick={() => toggleSection(index)}
+                                                    className="mt-2 text-blue-600 hover:text-blue-800 font-medium focus:outline-none transition-colors duration-200"
+                                                >
+                                                    {expandedSections[index] ? 'See Less' : 'See More'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
 
-                                {section.image && (
-                                    <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
-                                        {renderMedia({
-                                            type: 'image',
-                                            url: section.image,
-                                            caption: ''
-                                        })}
-                                    </div>
-                                )}
+                                    {section.image && (
+                                        <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
+                                            {renderMedia({
+                                                type: 'image',
+                                                url: section.image,
+                                                caption: ''
+                                            })}
+                                        </div>
+                                    )}
 
-                                {section.video && (
-                                    <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
-                                        {renderMedia({
-                                            type: 'video',
-                                            url: section.video,
-                                            caption: ''
-                                        })}
-                                    </div>
-                                )}
-                                {section.media && section.media.length > 0 && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-                                        {section.media.map((media, mediaIndex) => (
-                                            <div key={mediaIndex} className="h-full">
-                                                {renderMedia(media)}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                    {section.video && (
+                                        <div className="mb-8 overflow-hidden rounded-xl shadow-lg">
+                                            {renderMedia({
+                                                type: 'video',
+                                                url: section.video,
+                                                caption: ''
+                                            })}
+                                        </div>
+                                    )}
+                                    {section.media && section.media.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+                                            {section.media.map((media, mediaIndex) => (
+                                                <div key={mediaIndex} className="h-full">
+                                                    {renderMedia(media)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
 
-<div>
+                        <div>
                             {/* Contact Information Card */}
                             <div className="bg-white rounded-xl mt-5 shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
@@ -203,7 +205,7 @@ const OrganizationDetails = () => {
                                     </span>
                                     Contact Information
                                 </h2>
-                                
+
                                 <div className="space-y-6">
                                     <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                                         <div className="bg-blue-50 p-3 rounded-full">
@@ -214,7 +216,7 @@ const OrganizationDetails = () => {
                                             <span className="text-gray-800 font-medium">{organization.email}</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                                         <div className="bg-green-50 p-3 rounded-full">
                                             <FaPhone className="text-green-600 text-xl" />
@@ -230,9 +232,9 @@ const OrganizationDetails = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500">Website</p>
-                                            <a 
-                                                href={organization.website} 
-                                                target="_blank" 
+                                            <a
+                                                href={organization.website}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-blue-600 hover:text-blue-800 font-medium"
                                             >
@@ -240,7 +242,7 @@ const OrganizationDetails = () => {
                                             </a>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                                         <div className="bg-red-50 p-3 rounded-full">
                                             <FaMapMarkerAlt className="text-red-600 text-xl" />

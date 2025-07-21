@@ -18,6 +18,8 @@ import { Link } from "react-router";
 import loadingLogo from "../../assets/load.webp";
 import useCategories from "../../Hooks/useCategories";
 import Linkify from "react-linkify";
+import { franc } from "franc-min";
+import ChatBotButton from "../../Components/ChatBotButton/ChatBotButton";
 
 const Categories = lazy(() => import("../../Components/Categories/Categories"));
 const HomeLeft = lazy(() => import("../../Components/HomeLeft/HomeLeft"));
@@ -46,6 +48,41 @@ const Home = () => {
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [postLikes, setPostLikes] = useState({});
   const queryClient = useQueryClient();
+  const [userCountry, setUserCountry] = useState("");
+  const [targetLang, setTargetLang] = useState("eng_Latn");
+  const [translatedTexts, setTranslatedTexts] = useState({});
+  const [showTranslates, setShowTranslates] = useState({});
+  const [tLoadings, setTLoadings] = useState({});
+
+  // CSS styles for translation loading animation
+  const loadingTextStyle = {
+    display: 'inline-block',
+    background: 'linear-gradient(90deg, #4b6cb7 0%, #182848 50%, #4b6cb7 100%)',
+    backgroundSize: '200% auto',
+    color: 'transparent',
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    animation: 'shine 1.5s ease-in-out infinite',
+    fontWeight: 'bold',
+    padding: '4px 8px',
+    borderRadius: '4px'
+  };
+
+  const keyframes = `
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+  `;
+
+  useEffect(() => {
+    // Add keyframes to document
+    const style = document.createElement('style');
+    style.textContent = keyframes;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   const {
     isLoading: dataLoading,
@@ -70,38 +107,49 @@ const Home = () => {
         const data = await res.json();
 
         const posts = Array.isArray(data) ? data : [];
-
         const sortedData = [...posts].sort((a, b) => {
           try {
-            // Parse date in MM/DD/YYYY format and combine with time
-            const parseDateTime = (dateStr, timeStr) => {
-              if (!dateStr || !timeStr) return new Date(0);
+            const dateA = (a.date || "").replace(/["']/g, "").trim();
+            const dateB = (b.date || "").replace(/["']/g, "").trim();
+            const timeA = (a.time || "").replace(/["']/g, "").trim();
+            const timeB = (b.time || "").replace(/["']/g, "").trim();
 
-              const [month, day, year] = dateStr.split("/");
-              // Convert 12-hour format to 24-hour format
-              let [time, period] = timeStr.split(" ");
-              let [hours, minutes, seconds] = time.split(":");
-
-              if (period === "PM" && hours !== "12") {
-                hours = parseInt(hours) + 12;
-              }
-              if (period === "AM" && hours === "12") {
-                hours = "00";
-              }
-
-              return new Date(year, month - 1, day, hours, minutes, seconds);
+            const getTimestamp = (date, time) => {
+              const [month, day, year] = date
+                .split("/")
+                .map((n) => parseInt(n, 10));
+              const [timeStr, period] = time.split(" ");
+              const [hours, minutes, seconds] = timeStr
+                .split(":")
+                .map((n) => parseInt(n, 10));
+              let hours24 = hours;
+              if (period === "PM" && hours !== 12) hours24 += 12;
+              if (period === "AM" && hours === 12) hours24 = 0;
+              return new Date(
+                year,
+                month - 1,
+                day,
+                hours24,
+                minutes,
+                seconds
+              ).getTime();
             };
+            const timestampA = getTimestamp(dateA, timeA);
+            const timestampB = getTimestamp(dateB, timeB);
 
-            const dateA = parseDateTime(a.date, a.time);
-            const dateB = parseDateTime(b.date, b.time);
-
-            return dateB - dateA;
+            return timestampB - timestampA;
           } catch (error) {
-            console.error("Error sorting dates:", error);
+            console.error(
+              "Sorting error:",
+              error,
+              "\nPost A:",
+              a,
+              "\nPost B:",
+              b
+            );
             return 0;
           }
         });
-
         setVisiblePosts(sortedData.slice(0, POSTS_PER_PAGE));
         setCategoryLoading(false);
         return sortedData;
@@ -115,6 +163,125 @@ const Home = () => {
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    fetch("https://geolocation-db.com/json/")
+      .then((res) => res.json())
+      .then((data) => {
+        setUserCountry(data.country_name);
+        determineLanguage(data.country_code);
+      })
+      .catch((err) => console.error("Error fetching location:", err));
+  }, []);
+
+  const determineLanguage = (countryCode) => {
+    const languageMap = {
+      BD: "bn",  // বাংলা (Bangladesh)
+      IN: "hi",  // হিন্দি (India)
+      PK: "ur",  // উর্দু (Pakistan)
+      NP: "ne",  // নেপালি (Nepal)
+      LK: "si",  // সিংহলি (Sri Lanka)
+      MY: "ms",  // মালয় (Malaysia)
+      ID: "id",  // ইন্দোনেশিয়ান (Indonesia)
+      TH: "th",  // থাই (Thailand)
+      VN: "vi",  // ভিয়েতনামি (Vietnam)
+      MM: "my",  // বর্মি (Myanmar)
+      CN: "zh",  // চাইনিজ (China)
+      HK: "zh",  // চাইনিজ (Hong Kong)
+      TW: "zh",  // চাইনিজ (Taiwan)
+      JP: "ja",  // জাপানিজ (Japan)
+      KR: "ko",  // কোরিয়ান (South Korea)
+      SA: "ar",  // আরবি (Saudi Arabia)
+      AE: "ar",  // আরবি (UAE)
+      IQ: "ar",  // আরবি (Iraq)
+      IR: "fa",  // ফার্সি (Iran)
+      TR: "tr",  // তুর্কি (Turkey
+      FR: "fr",  // ফরাসি (France)
+      BE: "fr",  // ফরাসি (Belgium)
+      CH: "fr",  // ফরাসি (Switzerland)
+      CA: "fr",  // ফরাসি (Canada)
+      ES: "es",  // স্প্যানিশ (Spain)
+      MX: "es",  // স্প্যানিশ (Mexico)
+      CO: "es",  // স্প্যানিশ (Colombia)
+      AR: "es",  // স্প্যানিশ (Argentina)
+      DE: "de",  // জার্মান (Germany)
+      AT: "de",  // জার্মান (Austria)
+      CH: "de",  // জার্মান (Switzerland)
+      IT: "it",  // ইতালিয়ান (Italy)
+      PT: "pt",  // পর্তুগিজ (Portugal)
+      BR: "pt",  // পর্তুগিজ (Brazil)
+      NL: "nl",  // ডাচ (Netherlands)
+      SE: "sv",  // সুইডিশ (Sweden)
+      NO: "no",  // নরওয়েজিয়ান (Norway)
+      DK: "da",  // ড্যানিশ (Denmark)
+      FI: "fi",  // ফিনিশ (Finland)
+      RU: "ru",  // রাশিয়ান (Russia)
+      UA: "uk",  // ইউক্রেনিয়ান (Ukraine)
+      PL: "pl",  // পোলিশ (Poland)
+      CZ: "cs",  // চেক (Czech Republic)
+      HU: "hu",  // হাঙ্গেরিয়ান (Hungary)
+      RO: "ro",  // রোমানিয়ান (Romania)
+      GR: "el",  // গ্রিক (Greece)
+      ZA: "af",  // আফ্রিকান্স (South Africa)
+      NG: "yo",  // ইয়োরুবা (Nigeria)
+      ET: "am",  // আমহারিক (Ethiopia)
+      US: "en",  // ইংরেজি (United States)
+      UK: "en",  // ইংরেজি (United Kingdom)
+      CA: "en",  // ইংরেজি (Canada)
+      AU: "en",  // ইংরেজি (Australia)
+      NZ: "en",  // ইংরেজি (New Zealand)
+    };
+
+    setTargetLang(languageMap[countryCode] || "eng_Latn");
+  };
+
+  const handleTranslate = async (postId, content) => {
+    const detectedLang = franc(content);
+    console.log(targetLang, detectedLang);
+    const targetLangCode = targetLang.split("_")[0];
+    // যদি ভাষা 'ben' হয়, তবে অনুবাদ করার প্রয়োজন নেই
+    if (detectedLang === targetLangCode) {
+      toast.info("The post is already in your language.");
+      return;
+    }
+    if (translatedTexts[postId]) {
+      setShowTranslates((prev) => ({ ...prev, [postId]: !prev[postId] }));
+      return;
+    }
+
+    setTLoadings((prev) => ({ ...prev, [postId]: true }));
+    toast.loading(
+      <div style={loadingTextStyle}>
+        AI Translating...
+      </div>,
+      { duration: 2000 }
+    );
+    try {
+      const response = await axiosPublic.post("/api/translate", {
+        text: content,
+        srcLang: detectedLang,
+        targetLang: targetLang,
+      });
+
+      if (response.data && response.data.translation) {
+        setTranslatedTexts((prev) => ({
+          ...prev,
+          [postId]: response.data.translation,
+        }));
+        setShowTranslates((prev) => ({ ...prev, [postId]: true }));
+      } else {
+        throw new Error("Translation failed");
+      }
+    } catch (error) {
+      console.error("Translation error:", error);
+      toast.error(
+        error.response?.data?.error ||
+        "Translation failed. Please try again later."
+      );
+    } finally {
+      setTLoadings((prev) => ({ ...prev, [postId]: false }));
+    }
+  };
 
   useEffect(() => {
     if (activeCategory) {
@@ -226,10 +393,10 @@ const Home = () => {
           prev.map((post) =>
             post._id === postId
               ? {
-                  ...post,
-                  likes: post.likes + 1,
-                  likedBy: [...(post.likedBy || []), user.id],
-                }
+                ...post,
+                likes: post.likes + 1,
+                likedBy: [...(post.likedBy || []), user.id],
+              }
               : post
           )
         );
@@ -237,10 +404,10 @@ const Home = () => {
           const updatedData = data.map((post) =>
             post._id === postId
               ? {
-                  ...post,
-                  likes: post.likes + 1,
-                  likedBy: [...(post.likedBy || []), user.id],
-                }
+                ...post,
+                likes: post.likes + 1,
+                likedBy: [...(post.likedBy || []), user.id],
+              }
               : post
           );
           queryClient.setQueryData(
@@ -269,10 +436,10 @@ const Home = () => {
           prev.map((post) =>
             post._id === postId
               ? {
-                  ...post,
-                  likes: post.likes - 1,
-                  likedBy: post.likedBy.filter((id) => id !== user.id),
-                }
+                ...post,
+                likes: post.likes - 1,
+                likedBy: post.likedBy.filter((id) => id !== user.id),
+              }
               : post
           )
         );
@@ -280,10 +447,10 @@ const Home = () => {
           const updatedData = data.map((post) =>
             post._id === postId
               ? {
-                  ...post,
-                  likes: post.likes - 1,
-                  likedBy: post.likedBy.filter((id) => id !== user.id),
-                }
+                ...post,
+                likes: post.likes - 1,
+                likedBy: post.likedBy.filter((id) => id !== user.id),
+              }
               : post
           );
           queryClient.setQueryData(
@@ -323,9 +490,8 @@ const Home = () => {
         </div>
         <div className="space-y-5 mt-10 lg:mt-5">
           <nav
-            className={`bg-gray-50 fixed w-full lg:w-[650px] z-20 top-[115px] lg:top-[65px] left-1/2 transform -translate-x-1/2 border-b border-gray-200 transition-transform duration-300 ${
-              showNav ? "translate-y-0" : "-translate-y-full  top-[50px]"
-            }`}
+            className={`bg-gray-50 fixed w-full lg:w-[650px] z-20 top-[115px] lg:top-[65px] left-1/2 transform -translate-x-1/2 border-b border-gray-200 transition-transform duration-300 ${showNav ? "translate-y-0" : "-translate-y-full  top-[50px]"
+              }`}
           >
             <div className="p-4 flex justify-center">
               <div className="overflow-x-auto w-full">
@@ -334,11 +500,10 @@ const Home = () => {
                     <li key={category._id}>
                       <button
                         onClick={() => setActiveCategory(category.category)}
-                        className={`${
-                          activeCategory === category.category
-                            ? "text-blue-700"
-                            : "text-gray-900"
-                        } rounded hover:text-blue-700`}
+                        className={`${activeCategory === category.category
+                          ? "text-blue-700"
+                          : "text-gray-900"
+                          } rounded hover:text-blue-700`}
                       >
                         {category.category}
                       </button>
@@ -373,7 +538,6 @@ const Home = () => {
               <span className="loading loading-dots loading-lg"></span>
             </div>
           ) : (
-
             <div className="space-y-5">
               {categoryLoading ? (
                 <div className="flex flex-col items-center justify-center min-h-[200px]">
@@ -432,72 +596,125 @@ const Home = () => {
                           onClick={() => toggleExpand(post._id)}
                         >
                           {expandedPosts[post._id] ? (
-                            <Linkify
-                              componentDecorator={(
-                                decoratedHref,
-                                decoratedText,
-                                key
-                              ) => (
-                                <a
-                                  key={key}
-                                  href={decoratedHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
-                                >
-                                  {decoratedText}
-                                </a>
-                              )}
-                            >
-                              {post.message}
-                            </Linkify>
+                            <div className="space-y-3">
+                              <Linkify
+                                componentDecorator={(
+                                  decoratedHref,
+                                  decoratedText,
+                                  key
+                                ) => (
+                                  <a
+                                    key={key}
+                                    href={decoratedHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    {decoratedText}
+                                  </a>
+                                )}
+                              >
+                                {showTranslates[post._id]
+                                  ? translatedTexts[post._id] ||
+                                  "Translation loading..."
+                                  : post.message}
+                              </Linkify>
+
+                            </div>
                           ) : (
                             <>
                               <span className="block sm:hidden">
-                                <Linkify
-                                  componentDecorator={(
-                                    decoratedHref,
-                                    decoratedText,
-                                    key
-                                  ) => (
-                                    <a
-                                      key={key}
-                                      href={decoratedHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      {decoratedText}
-                                    </a>
-                                  )}
-                                >
-                                  {post.message.slice(0, 100)}...
-                                </Linkify>
+                                <div className="space-y-3">
+                                  <Linkify
+                                    componentDecorator={(
+                                      decoratedHref,
+                                      decoratedText,
+                                      key
+                                    ) => (
+                                      <a
+                                        key={key}
+                                        href={decoratedHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {decoratedText}
+                                      </a>
+                                    )}
+                                  >
+                                    {showTranslates[post._id]
+                                      ? translatedTexts[post._id]
+                                        ? translatedTexts[post._id].slice(
+                                          0,
+                                          100
+                                        ) + "..."
+                                        : "Translation loading..."
+                                      : post.message.slice(0, 100) + "..."}
+                                  </Linkify>
+                                </div>
                               </span>
                               <span className="hidden sm:block">
-                                <Linkify
-                                  componentDecorator={(
-                                    decoratedHref,
-                                    decoratedText,
-                                    key
-                                  ) => (
-                                    <a
-                                      key={key}
-                                      href={decoratedHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      {decoratedText}
-                                    </a>
-                                  )}
-                                >
-                                  {post.message.slice(0, 180)}...
-                                </Linkify>
+                                <div className="space-y-3">
+                                  <Linkify
+                                    componentDecorator={(
+                                      decoratedHref,
+                                      decoratedText,
+                                      key
+                                    ) => (
+                                      <a
+                                        key={key}
+                                        href={decoratedHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {decoratedText}
+                                      </a>
+                                    )}
+                                  >
+                                    {showTranslates[post._id]
+                                      ? translatedTexts[post._id]
+                                        ? translatedTexts[post._id].slice(
+                                          0,
+                                          180
+                                        ) + "..."
+                                        : "Translation loading..."
+                                      : post.message.slice(0, 180) + "..."}
+                                  </Linkify>
+                                </div>
                               </span>
                             </>
                           )}
                         </p>
+                        <button
+                          onClick={() =>
+                            handleTranslate(post._id, post.message)
+                          }
+                          className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 transition-colors"
+                          disabled={tLoadings[post._id]}
+                        >
+                          {tLoadings[post._id] ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                              />
+                            </svg>
+                          )}
+                          {showTranslates[post._id]
+                            ? "Show Original"
+                            : "Translate"}
+                        </button>
                       </div>
                       <figure className="w-full">
                         <img
@@ -586,6 +803,7 @@ const Home = () => {
           <DownNav />
         </Suspense>
       </div>
+      <ChatBotButton />
     </div>
   );
 };

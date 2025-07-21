@@ -1,0 +1,18 @@
+[
+    {
+        "id": "1",
+        "title": "The Door in the Wall by H.G. Wells",
+        "author": "JH.G. Wells",
+        "narrator": "Arthur Lane",
+        "coverImage": "https://res.cloudinary.com/duyrnfagi/image/upload/v1743770177/81DQAhxg_QL._AC_UF894_1000_QL80__qcla9v.jpg",
+        "audioUrl": "https://res.cloudinary.com/duyrnfagi/video/upload/v1743769832/The_Door_in_the_Wall_by_H.G._Wells_Short_Story_Audiobook_hnaldp.mp3",
+        "duration": "45m",
+        "language": "English",
+        "description": "A thrilling mystery novel set in a quiet mountain town, where secrets come to light as the dawn breaks.",
+        "releaseDate": "2023-08-15",
+        "category": "Mystery",
+        "rating": 4.6,
+        "totalChapters": 10
+      }
+      
+]

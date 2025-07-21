@@ -55,11 +55,28 @@ import OrganizationDetails from "./OrganizationDetails/OrganizationDetails";
 import MyOrganizations from "./MyOrganizations/MyOrganizations";
 import MyOrganizationDetails from "./MyOrganizationDetails/MyOrganizationDetails";
 import AdminManageOrg from "./DashboardPages/AdminManageOrg";
+import AddActivities from "./AddActivities/AddActivities";
+import MyAllActivies from "./MyAllActivies/MyAllActivies";
+import OrgActivies from "./OrgActivies/OrgActivies";
+import ActivityDetails from "./ActivityDetails/ActivityDetails";
+import OrgEvents from "./OrgEvents/OrgEvents";
+import SocialOrganizations from "./SocialOrganizations/SocialOrganizations";
+import AllOrganizationManage from "./DashboardPages/AllOrganizationManage";
+import AdminEManage from "./DashboardPages/AdminEManage";
+import ELearning from "./ELearning/ELearning";
+import CourseDetails from "./CourseDetails/CourseDetails";
+import AudioBooks from "./AudioBooks/AudioBooks";
+import Channels from "./Channels/Channels";
+import ManageChannel from "./DashboardPages/ManageChannel";
+import AddCourse from "./DashboardPages/AddCourse"
+import ChannelBox from "./ChannelBox/ChannelBox";
+import ChatBot from "./ChatBot/ChatBot";
+import ManageCourse from "./DashboardPages/ManageCourse";
 
 export const router = createBrowserRouter([
     {
         path: '/',
-        element:<Home/>
+        element: <Home />
     },
     {
         path: '/login',
@@ -67,7 +84,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/register',
-        element: <Register/>
+        element: <Register />
     },
     {
         path: '/my-profile',
@@ -75,7 +92,7 @@ export const router = createBrowserRouter([
     },
     {
         path: '/recover-password',
-        element: <RecoverPass/>
+        element: <RecoverPass />
     },
     {
         path: '/reset_password/:id/:token',
@@ -83,11 +100,11 @@ export const router = createBrowserRouter([
     },
     {
         path: '/peoples',
-        element: <PrivateRoute><Peoples/></PrivateRoute>
+        element: <PrivateRoute><Peoples /></PrivateRoute>
     },
     {
         path: '/public-opinion',
-        element: <PrivateRoute><PublicOpinion/></PrivateRoute>
+        element: <PrivateRoute><PublicOpinion /></PrivateRoute>
     },
     {
         path: '/profile/:userId',
@@ -95,52 +112,52 @@ export const router = createBrowserRouter([
     },
     {
         path: '/library/:userId',
-        element: <PrivateRoute><UserLibrary/></PrivateRoute>,
+        element: <PrivateRoute><UserLibrary /></PrivateRoute>,
         children: [
             {
                 path: '/library/:userId',
-                element: <PrivateRoute><UserLibraryBook/></PrivateRoute>
+                element: <PrivateRoute><UserLibraryBook /></PrivateRoute>
             },
-            
+
             {
                 path: '/library/:userId/onindo',
-                element: <PrivateRoute><UserOnindoLibrary/></PrivateRoute>
+                element: <PrivateRoute><UserOnindoLibrary /></PrivateRoute>
             }
         ]
     },
     {
         path: '/my-library',
-        element: <PrivateRoute><MyLibrary/></PrivateRoute>,
+        element: <PrivateRoute><MyLibrary /></PrivateRoute>,
         children: [
             {
                 path: '/my-library',
-                element: <PrivateRoute><MyLibraryBook/></PrivateRoute>
+                element: <PrivateRoute><MyLibraryBook /></PrivateRoute>
             },
             {
                 path: '/my-library/book-request',
-                element: <PrivateRoute><MyBookRequest/></PrivateRoute>
+                element: <PrivateRoute><MyBookRequest /></PrivateRoute>
             },
             {
                 path: '/my-library/my-request',
-                element: <PrivateRoute><MyRequestBook/></PrivateRoute>
+                element: <PrivateRoute><MyRequestBook /></PrivateRoute>
             },
             {
                 path: '/my-library/transfer-history',
-                element: <PrivateRoute><MyTrans/></PrivateRoute>
+                element: <PrivateRoute><MyTrans /></PrivateRoute>
             },
         ]
     },
     {
         path: '/my-onindo-library',
-        element: <PrivateRoute><MyOnindoLibrary/></PrivateRoute>,
-        children:[
+        element: <PrivateRoute><MyOnindoLibrary /></PrivateRoute>,
+        children: [
             {
                 path: '/my-onindo-library',
-                element: <PrivateRoute><MyOnindoAllBook/></PrivateRoute>
+                element: <PrivateRoute><MyOnindoAllBook /></PrivateRoute>
             },
             {
                 path: '/my-onindo-library/book-request',
-                element: <PrivateRoute><MyOnindoRequest/></PrivateRoute>
+                element: <PrivateRoute><MyOnindoRequest /></PrivateRoute>
             }
         ]
     },
@@ -150,68 +167,89 @@ export const router = createBrowserRouter([
     },
     {
         path: '/dashboard',
-        element: <AdminRoute><PrivateRoute><AdminDashBoard/></PrivateRoute></AdminRoute>,
+        element: <AdminRoute><PrivateRoute><AdminDashBoard /></PrivateRoute></AdminRoute>,
         children: [
             {
                 path: '/dashboard',
-                element: <AdminRoute><PrivateRoute><DashboardData/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><DashboardData /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/all-users',
-                element: <AdminRoute><PrivateRoute><AllUsersAdmin/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AllUsersAdmin /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/all-opinion',
-                element: <AdminRoute><PrivateRoute><AllOpinionAdmin/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AllOpinionAdmin /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/all-books',
-                element: <AdminRoute><PrivateRoute><AllBooksAdmin/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AllBooksAdmin /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/transfer-history',
-                element: <AdminRoute><PrivateRoute><AllTransferDetails/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AllTransferDetails /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/add-post',
-                element: <AdminRoute><PrivateRoute><AddadminPost/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AddadminPost /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/thesis-post',
-                element: <AdminRoute><PrivateRoute><ThesisPost/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><ThesisPost /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/add-ai-post',
-                element: <AdminRoute><PrivateRoute><AiPosts/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AiPosts /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/all-posts',
-                element: <AdminRoute><PrivateRoute><AdminPosts/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AdminPosts /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/add-category',
-                element: <AdminRoute><PrivateRoute><AddCategory/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AddCategory /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/add-pdf',
-                element: <AdminRoute><PrivateRoute><PdfAdd/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><PdfAdd /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/all-pdf-books',
-                element: <AdminRoute><PrivateRoute><AllAdminPdfBooks/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AllAdminPdfBooks /></PrivateRoute></AdminRoute>
             },
             {
                 path: '/dashboard/manage-organizations',
-                element: <AdminRoute><PrivateRoute><AdminManageOrg/></PrivateRoute></AdminRoute>
+                element: <AdminRoute><PrivateRoute><AdminManageOrg /></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/organizations-controller',
+                element: <AdminRoute><PrivateRoute><AllOrganizationManage /></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/events-management',
+                element: <AdminRoute><PrivateRoute><AdminEManage /></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/manage-channels',
+                element: <AdminRoute><PrivateRoute><ManageChannel /></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/add-course',
+                element: <AdminRoute><PrivateRoute><AddCourse /></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/dashboard/manage-course',
+                element: <AdminRoute><PrivateRoute><ManageCourse /></PrivateRoute></AdminRoute>
             }
-            
+
+
         ]
-    },{
+    }, {
         path: '/search-result',
-        element: <PrivateRoute><ScearchPage/></PrivateRoute>
-    },{
+        element: <PrivateRoute><ScearchPage /></PrivateRoute>
+    }, {
         path: '/chats',
-        element: <PrivateRoute><ChatsPage/></PrivateRoute>,
+        element: <PrivateRoute><ChatsPage /></PrivateRoute>,
         children: [
             {
                 path: '/chats',
@@ -219,59 +257,106 @@ export const router = createBrowserRouter([
             },
             {
                 path: '/chats/:userId',
-                element: <PrivateRoute><MassegeBox/></PrivateRoute>
+                element: <PrivateRoute><MassegeBox /></PrivateRoute>
             }
         ]
-    },{
+    }, {
         path: "/notifications",
-        element: <PrivateRoute><Notifications/></PrivateRoute>
-    },{
+        element: <PrivateRoute><Notifications /></PrivateRoute>
+    }, {
         path: "/thesis",
-        element: <Thesis/>
-    },{
+        element: <Thesis />
+    }, {
         path: '/thesis/:postId',
         element: <ThesisRead></ThesisRead>
-    },{
-        path: '/contract-us',
+    }, {
+        path: '/contact-us',
         element: <ContractUs></ContractUs>
-    },{
-        path:"/nearby-friends",
+    }, {
+        path: "/nearby-friends",
         element: <PrivateRoute><NearbyFriends></NearbyFriends></PrivateRoute>
-    },{
+    }, {
         path: "/pdf-book",
-        element: <PdfBook/>
-    },{
+        element: <PdfBook />
+    }, {
         path: "/view-pdf-book/:id",
-        element: <ViewPdfBook/>
+        element: <ViewPdfBook />
     },
     {
         path: '/free-ai',
-        element: <FreeAi/>
-    },{
+        element: <FreeAi />
+    }, {
         path: '/ai-post/:id',
-        element: <ViewAiPost/>
+        element: <ViewAiPost />
     },
     {
         path: '/organizations',
-        element: <Organizations/>
+        element: <Organizations />
     },
     {
         path: '/add-organization',
-        element: <AddOrganization/>
+        element: <AddOrganization />
     },
     {
         path: '/organization/:orgId',
-        element: <OrganizationDetails/>
-    },{
+        element: <OrganizationDetails />
+    }, {
         path: '/my-organization/:orgId',
-        element: <MyOrganizationDetails/>
+        element: <PrivateRoute><MyOrganizationDetails /></PrivateRoute>
     },
     {
         path: '/my-organizations',
-        element: <PrivateRoute><MyOrganizations/> </PrivateRoute>
+        element: <PrivateRoute><MyOrganizations /> </PrivateRoute>
+    },
+    {
+        path: '/my-organization/add-organization-activies/:orgId',
+        element: <PrivateRoute><AddActivities /></PrivateRoute>
+    },
+    {
+        path: '/my-organization/:orgId/activities',
+        element: <PrivateRoute><MyAllActivies /></PrivateRoute>
+    },
+    {
+        path: '/organization/:orgId/activities',
+        element: <PrivateRoute><OrgActivies /></PrivateRoute>
+    },
+    {
+        path: '/activity-details/:id',
+        element: <PrivateRoute><ActivityDetails /></PrivateRoute>
+    },
+    {
+        path: '/social-organizations',
+        element: <SocialOrganizations />
+    },
+    {
+        path: '/organizations-events',
+        element: <OrgEvents />
+    },
+    {
+        path: '/e-learning',
+        element: <ELearning />
+    }, {
+        path: '/course-details/:courseId',
+        element: <CourseDetails />
+    },
+    {
+        path: '/audio-book',
+        element: <AudioBooks />
+    },
+    {
+        path: '/channels',
+        element: <Channels />
+    },
+    {
+        path: '/channel/:channelId',
+        element: <ChannelBox />
+    },
+    {
+        path: '/chatbot',
+        element: <ChatBot />
     },
     {
         path: '*',
-        element: <ErrorPage/>
+        element: <ErrorPage />
     }
-  ]);
+]);

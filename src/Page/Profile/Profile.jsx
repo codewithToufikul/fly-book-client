@@ -55,7 +55,7 @@ const Profile = () => {
   useEffect(() => {
     // Scroll to top
     window.scrollTo(0, 0);
-    
+
     // Load face-api models
     const loadModels = async () => {
       setFaceApiLoading(true);
@@ -436,9 +436,8 @@ const Profile = () => {
                 />
                 <label
                   htmlFor="coverInput"
-                  className={`flex items-center justify-center w-8 h-8 ${
-                    loadingUpload ? "bg-gray-300" : "bg-slate-400"
-                  } text-white rounded-full cursor-pointer`}
+                  className={`flex items-center justify-center w-8 h-8 ${loadingUpload ? "bg-gray-300" : "bg-slate-400"
+                    } text-white rounded-full cursor-pointer`}
                 >
                   {coverLoading ? (
                     <div className="animate-spin border-2 border-t-transparent border-white rounded-full w-4 h-4"></div>
@@ -471,9 +470,8 @@ const Profile = () => {
                     />
                     <label
                       htmlFor="profileInput"
-                      className={`flex items-center justify-center w-8 h-8 ${
-                        loadingUpload ? "bg-gray-300" : "bg-slate-400"
-                      } text-white rounded-full cursor-pointer`}
+                      className={`flex items-center justify-center w-8 h-8 ${loadingUpload ? "bg-gray-300" : "bg-slate-400"
+                        } text-white rounded-full cursor-pointer`}
                     >
                       {loadingUpload ? (
                         <div className="animate-spin border-2 border-t-transparent border-white rounded-full w-4 h-4"></div>
@@ -804,14 +802,14 @@ const Profile = () => {
             <div className="bg-gray-50 p-3 rounded-xl mt-3">
               <div className="flex justify-between items-center border-b-2 pb-2">
                 <h1 className="text-xl lg:text-2xl font-medium">My Notes</h1>
-                <button 
+                <button
                   onClick={() => setShowNoteModal(true)}
                   className="btn btn-sm bg-gray-100"
                 >
                   Add Note
                 </button>
               </div>
-              
+
               <div className="mt-3 space-y-2">
                 {notes.map((note) => (
                   <div key={note._id} className="bg-white p-3 rounded-lg shadow-sm">
@@ -820,7 +818,7 @@ const Profile = () => {
                         <span className="text-gray-500 mt-1"><FaNoteSticky /></span>
                         <p className="text-sm lg:text-base whitespace-pre-wrap">{note.content}</p>
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleDeleteNote(note._id)}
                         className="text-red-500 hover:text-red-700"
                       >
@@ -832,7 +830,7 @@ const Profile = () => {
                     </p>
                   </div>
                 ))}
-                
+
                 {notes.length === 0 && (
                   <p className="text-center text-gray-500 py-4">No notes yet</p>
                 )}
@@ -861,11 +859,9 @@ const Profile = () => {
                         <h1 className="text-lg lg:text-xl font-medium">
                           {post.userName}
                         </h1>
-                        <p className="text-xs text-slate-400 lg:text-sm">{`${
-                          post.date
-                        } at ${
-                          post.time.slice(0, -6) + post.time.slice(-3)
-                        }`}</p>
+                        <p className="text-xs text-slate-400 lg:text-sm">{`${post.date
+                          } at ${post.time.slice(0, -6) + post.time.slice(-3)
+                          }`}</p>
                       </div>
                     </Link>
                     <pre
@@ -884,20 +880,20 @@ const Profile = () => {
                     </pre>
                   </div>
                   {post.pdf && (
-                        <div className="px-4 py-3 bg-gray-100 mt-2 rounded-md mx-4">
-                          <div className="flex items-center gap-2">
-                            <FaFilePdf className="text-red-600 text-xl" />
-                            <a 
-                              href={post.pdf}
-                              target="_blank"
-                              rel="noopener noreferrer" 
-                              className="text-blue-600 hover:underline text-sm"
-                            >
-                              View PDF
-                            </a>
-                          </div>
-                        </div>
-                      )}
+                    <div className="px-4 py-3 bg-gray-100 mt-2 rounded-md mx-4">
+                      <div className="flex items-center gap-2">
+                        <FaFilePdf className="text-red-600 text-xl" />
+                        <a
+                          href={post.pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          View PDF
+                        </a>
+                      </div>
+                    </div>
+                  )}
                   {post.image && (
                     <figure className="w-full h-full md:w-full lg:overflow-hidden flex justify-center items-center bg-gray-100">
                       <img
@@ -941,8 +937,8 @@ const Profile = () => {
       {showNoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white p-4 rounded-lg w-[90%] max-w-md relative">
-            <button 
-              onClick={() => setShowNoteModal(false)} 
+            <button
+              onClick={() => setShowNoteModal(false)}
               className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
             >
               ✕
@@ -955,13 +951,13 @@ const Profile = () => {
               placeholder="Write your note here..."
             />
             <div className="flex justify-end gap-2">
-              <button 
+              <button
                 onClick={() => setShowNoteModal(false)}
                 className="btn btn-sm"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleAddNote}
                 className="btn btn-sm btn-primary"
               >

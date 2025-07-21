@@ -17,101 +17,232 @@ import imageCompression from "browser-image-compression";
 
 const MyLibrary = () => {
   const { user, loading } = useUser();
-const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
-const axiosPublic = usePublicAxios();
-const token = localStorage.getItem("token");
-const [bookData, setBookData] = useState({
-  bookName: "",
-  writer: "",
-  details: "",
-  image: null,
-  returnTime: "",
-});
+  const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
+  const axiosPublic = usePublicAxios();
+  const token = localStorage.getItem("token");
+  const [bookData, setBookData] = useState({
+    bookName: "",
+    writer: "",
+    details: "",
+    image: null,
+    returnTime: "",
+  });
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
-if (loading) {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="relative">
-        <div className="h-24 w-24 rounded-full border-t-8 border-b-8 border-gray-200"></div>
-        <div className="absolute top-0 left-0 h-24 w-24 rounded-full border-t-8 border-b-8 border-blue-500 animate-spin"></div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="relative">
+          <div className="h-24 w-24 rounded-full border-t-8 border-b-8 border-gray-200"></div>
+          <div className="absolute top-0 left-0 h-24 w-24 rounded-full border-t-8 border-b-8 border-blue-500 animate-spin"></div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-  setBookData((prev) => ({ ...prev, [name]: value }));
-};
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setBookData((prev) => ({ ...prev, [name]: value }));
+  };
 
-const handleFileChange = async (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const options = {
-      maxSizeMB: 0.02, // 20 KB max size
-      maxWidthOrHeight: 800, // Optional: Set max width or height
-      useWebWorker: true, // Optional: Use web worker for compression
-    };
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const options = {
+        maxSizeMB: 0.02, // 20 KB max size
+        maxWidthOrHeight: 800, // Optional: Set max width or height
+        useWebWorker: true, // Optional: Use web worker for compression
+      };
+
+      try {
+        const compressedFile = await imageCompression(file, options);
+        setBookData((prev) => ({ ...prev, image: compressedFile }));
+      } catch (error) {
+        console.error("Image compression failed:", error);
+      }
+    }
+  };
+
+  // Function to get user's current location
+  const getCurrentLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by this browser"));
+        return;
+      }
+
+      setIsGettingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            // Reverse geocoding to get address from coordinates
+            const response = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+            );
+            const locationData = await response.json();
+            
+            const locationInfo = {
+    type: "Point",
+    coordinates: [longitude, latitude]
+            };
+            
+            setIsGettingLocation(false);
+            resolve(locationInfo);
+          } catch (error) {
+            console.error("Error getting address:", error);
+            // Fallback to just coordinates if reverse geocoding fails
+            const locationInfo = {
+    type: "Point",
+    coordinates: [longitude, latitude]
+            };
+            setIsGettingLocation(false);
+            resolve(locationInfo);
+          }
+        },
+        (error) => {
+          setIsGettingLocation(false);
+          let errorMessage = "Unable to get location";
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access denied by user";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information unavailable";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out";
+              break;
+            default:
+              errorMessage = "An unknown error occurred";
+              break;
+          }
+          
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    });
+  };
+
+  const addBook = async (e) => {
+    e.preventDefault();
+    const currentDate = new Date().toLocaleDateString();
+    const currentTime = new Date().toLocaleTimeString();
+
+    if (user.verificationStatus !== true) {
+      toast.error('at fast verify your face 😊');
+      return;
+    }
 
     try {
-      const compressedFile = await imageCompression(file, options);
-      setBookData((prev) => ({ ...prev, image: compressedFile }));
-    } catch (error) {
-      console.error("Image compression failed:", error);
-    }
-  }
-};
+      // Get user's current location
+      toast.loading('Getting your location...', { id: 'location' });
+      const locationInfo = await getCurrentLocation();
+      toast.success('Location obtained!', { id: 'location' });
 
-const addBook = async (e) => {
-  e.preventDefault();
-  const currentDate = new Date().toLocaleDateString();
-  const currentTime = new Date().toLocaleTimeString();
+      // Upload image to ImgBB
+      const formData = new FormData();
+      formData.append("image", bookData.image);
 
-  if(user.verificationStatus !== true){
-    toast.error('at fast verify your face 😊')
-    return;
-  }
-  // Upload image to ImgBB
-  const formData = new FormData();
-  formData.append("image", bookData.image);
+      toast.loading('Uploading book...', { id: 'upload' });
+      
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await res.json();
+      const imageUrl = data?.data?.url;
 
-  try {
-    const res = await fetch(
-      `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
-      {
-        method: "POST",
-        body: formData,
+      if (imageUrl) {
+        const bookAllData = {
+          ...bookData,
+          imageUrl,
+          userId: user.id,
+          currentDate: currentDate,
+          currentTime: currentTime,
+          location: locationInfo, // Add location information
+        };
+        
+        try {
+          await axiosPublic.post(
+            "/books/add",
+            { bookAllData },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          toast.success("Book Added with location!", { id: 'upload' });
+          window.location.reload();
+        } catch (error) {
+          console.log(error);
+          toast.error("Failed to add book", { id: 'upload' });
+        }
+      } else {
+        console.error("Image upload failed:", data);
+        toast.error("Image upload failed", { id: 'upload' });
       }
-    );
-    const data = await res.json();
-    const imageUrl = data?.data?.url;
+    } catch (locationError) {
+      console.error("Location error:", locationError);
+      
+      // Ask user if they want to continue without location
+      const continueWithoutLocation = window.confirm(
+        `Unable to get location: ${locationError.message}\n\nDo you want to add the book without location information?`
+      );
+      
+      if (continueWithoutLocation) {
+        // Proceed without location
+        const formData = new FormData();
+        formData.append("image", bookData.image);
 
-    if (imageUrl) {
-      const bookAllData = {
-        ...bookData,
-        imageUrl,
-        userId: user.id,
-        currentDate: currentDate,
-        currentTime: currentTime,
-      };
-      try {
-        await axiosPublic.post(
-          "/books/add",
-          { bookAllData },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success("Book Added!");
-        window.location.reload();
-      } catch (error) {
-        console.log(error);
+        toast.loading('Uploading book...', { id: 'upload' });
+        
+        try {
+          const res = await fetch(
+            `https://api.imgbb.com/1/upload?key=${IMG_BB_API_KEY}`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+          const data = await res.json();
+          const imageUrl = data?.data?.url;
+
+          if (imageUrl) {
+            const bookAllData = {
+              ...bookData,
+              imageUrl,
+              userId: user.id,
+              currentDate: currentDate,
+              currentTime: currentTime,
+              location: null, // No location data
+            };
+            
+            await axiosPublic.post(
+              "/books/add",
+              { bookAllData },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast.success("Book Added!", { id: 'upload' });
+            window.location.reload();
+          }
+        } catch (error) {
+          console.log(error);
+          toast.error("Failed to add book", { id: 'upload' });
+        }
+      } else {
+        toast.error('Location required to add book', { id: 'location' });
       }
-    } else {
-      console.error("Image upload failed:", data);
     }
-  } catch (error) {
-    console.error("Error uploading image:", error);
-  }
-};
+  };
+
   return (
     <div>
       <Navbar />
@@ -164,6 +295,7 @@ const addBook = async (e) => {
                     document.getElementById("my_modal_3").showModal()
                   }
                   className="btn bg-blue-500 text-white border-2"
+                  disabled={isGettingLocation}
                 >
                   <span className="text-2xl font-semibold">
                     <IoIosAddCircleOutline />
@@ -263,6 +395,7 @@ const addBook = async (e) => {
                         document.getElementById("my_modal_3").showModal()
                       }
                       className="btn bg-blue-500 text-white border-2"
+                      disabled={isGettingLocation}
                     >
                       <span className="text-2xl font-semibold">
                         <IoIosAddCircleOutline />
@@ -390,6 +523,15 @@ const addBook = async (e) => {
                 <h3 className="font-medium text-center text-lg">
                   Add a Book to Your Library
                 </h3>
+                
+                {/* Location info notice */}
+                <div className="alert alert-info mt-2 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-xs">Your location will be saved with the book to help others find it nearby.</span>
+                </div>
+
                 <label className="block mb-2 mt-4 text-sm font-normal text-gray-900">
                   Add Book Name
                 </label>
@@ -400,6 +542,7 @@ const addBook = async (e) => {
                   onChange={handleInputChange}
                   placeholder="Add your Book Name"
                   className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
+                  required
                 />
 
                 <label className="block mb-2 mt-4 text-sm font-normal text-gray-900">
@@ -412,6 +555,7 @@ const addBook = async (e) => {
                   onChange={handleInputChange}
                   placeholder="Add your Book Writer"
                   className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
+                  required
                 />
 
                 <label className="block mb-2 mt-4 text-sm font-normal text-gray-900">
@@ -432,12 +576,13 @@ const addBook = async (e) => {
                   Select return Time
                 </label>
                 <select
-                  name="returnTime" // Add the name attribute for identification
-                  value={bookData.returnTime || ""} // Bind the value to `bookData.returnTime`
-                  onChange={handleInputChange} // Call the handleInputChange method
-                  className="select select-bordered select-sm w-full "
+                  name="returnTime"
+                  value={bookData.returnTime || ""}
+                  onChange={handleInputChange}
+                  className="select select-bordered select-sm w-full"
+                  required
                 >
-                  <option disabled selected>
+                  <option disabled value="">
                     select time
                   </option>
                   <option>3 days</option>
@@ -445,6 +590,7 @@ const addBook = async (e) => {
                   <option>15 days</option>
                   <option>30 days</option>
                 </select>
+                
                 <label className="block mb-2 mt-4 text-sm font-normal text-gray-900">
                   Upload your Book Image
                 </label>
@@ -452,12 +598,14 @@ const addBook = async (e) => {
                   type="file"
                   onChange={handleFileChange}
                   className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
+                  required
                 />
 
                 <input
                   type="submit"
-                  value="Add Book"
-                  className="w-full p-2 mt-4 text-gray-900 border rounded-xl cursor-pointer hover:shadow-lg py-3 bg-gray-50 text-xs"
+                  value={isGettingLocation ? "Getting Location..." : "Add Book"}
+                  disabled={isGettingLocation}
+                  className="w-full p-2 mt-4 text-gray-900 border rounded-xl cursor-pointer hover:shadow-lg py-3 bg-gray-50 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </form>
             </div>

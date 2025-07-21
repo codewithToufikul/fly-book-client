@@ -63,7 +63,7 @@ const MassegeBox = () => {
     setSocket(newSocket);
 
     // Log connection success
-    newSocket.on("connect", () => {});
+    newSocket.on("connect", () => { });
 
     // Handle errors during connection
     newSocket.on("connect_error", (error) => {
@@ -81,7 +81,7 @@ const MassegeBox = () => {
 
       newSocket.emit("joinRoom", roomId);
 
-      newSocket.on("connected", () => {});
+      newSocket.on("connected", () => { });
     }
 
     // Listen for incoming messages
@@ -163,7 +163,7 @@ const MassegeBox = () => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", UPLOAD_PRESET);
-      
+
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
         formData
@@ -331,11 +331,10 @@ const MassegeBox = () => {
 
     return (
       <div className="max-w-[300px] transition-transform hover:scale-[1.02]">
-        <div className={`rounded-2xl overflow-hidden shadow-lg ${
-          senderId === myId
-            ? "bg-blue-500 text-white"
-            : "bg-white text-gray-900"
-        }`}>
+        <div className={`rounded-2xl overflow-hidden shadow-lg ${senderId === myId
+          ? "bg-blue-500 text-white"
+          : "bg-white text-gray-900"
+          }`}>
           <div className="p-4">
             <div className="flex items-center gap-3">
               <BsFileEarmarkPdf size={32} className={senderId === myId ? "text-white/90" : "text-red-500"} />
@@ -348,11 +347,10 @@ const MassegeBox = () => {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`mt-3 block text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                senderId === myId
-                  ? "bg-white/10 hover:bg-white/20 text-white"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
-              }`}
+              className={`mt-3 block text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors ${senderId === myId
+                ? "bg-white/10 hover:bg-white/20 text-white"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+                }`}
             >
               Open PDF
             </a>
@@ -367,7 +365,7 @@ const MassegeBox = () => {
       {/* Header - adjusted padding */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-2 py-2">
         <div className="flex items-center gap-2">
-          <Link 
+          <Link
             to={'/chats'}
             className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
           >
@@ -395,9 +393,8 @@ const MassegeBox = () => {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex mb-3 ${
-              message.senderId === myData.id ? "justify-end" : "justify-start"
-            }`}
+            className={`flex mb-3 ${message.senderId === myData.id ? "justify-end" : "justify-start"
+              }`}
           >
             <div className={`max-w-[85%] space-y-1`}>
               {message.messageType === "image" ? (
@@ -433,8 +430,8 @@ const MassegeBox = () => {
                 </div>
               ) : message.messageType === "pdf" ? (
                 <div className="relative max-w-[280px]">
-                  <PdfPreview 
-                    url={message.mediaUrl} 
+                  <PdfPreview
+                    url={message.mediaUrl}
                     senderId={message.senderId}
                     myId={myData.id}
                   />
@@ -461,11 +458,10 @@ const MassegeBox = () => {
                 </div>
               ) : (
                 <div
-                  className={`relative ${
-                    message.senderId === myData.id
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-gray-900"
-                  } px-4 py-2.5 rounded-xl shadow-sm`}
+                  className={`relative ${message.senderId === myData.id
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-gray-900"
+                    } px-4 py-2.5 rounded-xl shadow-sm`}
                 >
                   <p className="text-sm">{message.messageText}</p>
                   {message.senderId === myData.id && (
@@ -501,7 +497,7 @@ const MassegeBox = () => {
           </div>
         ))}
         <div ref={bottomRef} />
-        
+
         {isTyping && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm w-fit">
             <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -522,10 +518,10 @@ const MassegeBox = () => {
               <TbFileUpload className="text-xl" />
             </label>
           </div>
-          
+
           <input type="file" id="image-upload" accept="image/*" className="hidden" onChange={handleFileChange} />
           <input type="file" id="pdf-upload" accept=".pdf" className="hidden" onChange={handleFileChange} />
-          
+
           <input
             type="text"
             name="message"
@@ -533,9 +529,9 @@ const MassegeBox = () => {
             placeholder="Type your message..."
             className="flex-1 min-w-0 px-3 py-1.5 bg-gray-50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={isUploading}
             className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-full disabled:opacity-50"
           >

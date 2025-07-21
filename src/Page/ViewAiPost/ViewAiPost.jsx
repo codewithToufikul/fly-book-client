@@ -46,8 +46,8 @@ const ViewAiPost = () => {
         </h1>
         {data.image && (
           <div className="my-4">
-            <img 
-              src={data.image} 
+            <img
+              src={data.image}
               alt={data.title}
               className="max-w-full h-auto rounded-lg shadow-md"
             />

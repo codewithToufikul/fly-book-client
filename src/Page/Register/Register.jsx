@@ -53,15 +53,15 @@ const Register = () => {
       }
       return;
     }
-  
+
     const formData = new FormData(e.target);
     const name = formData.get("name");
     const email = formData.get("email");
     const number = formData.get("number");
     const password = formData.get("password");
-  
+
     const numberString = number.toString();
-  
+
     // Validate phone number
     if (
       numberString.length !== 11 ||
@@ -72,14 +72,14 @@ const Register = () => {
       setNumErr("Invalid Number! Must be 11 digits and start with '01'.");
       return;
     }
-  
+
     // Validate password length
     if (password.length < 6) {
       setLoading(false);
       setPassErr("Password must be at least 6 characters long!");
       return;
     }
-  
+
     const userInfo = {
       name,
       email,
@@ -87,10 +87,10 @@ const Register = () => {
       password,
       userLocation,
     };
-  
+
     try {
       const res = await axios.post("https://api.flybook.com.bd/users/register", userInfo);
-  
+
       if (res.data.success) {
         toast.success("Registered successfully!");
         navigete("/login");
@@ -105,8 +105,8 @@ const Register = () => {
       setLoading(false);
     }
   };
-  
-  
+
+
 
   return (
     <div className="font-[sans-serif] bg-white max-w-4xl flex items-center mx-auto md:h-screen p-4 justify-center flex-col">

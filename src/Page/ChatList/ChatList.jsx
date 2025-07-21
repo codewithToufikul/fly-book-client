@@ -61,7 +61,7 @@ const ChatList = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedChat) return;
-    
+
     setDeleting(true);
     try {
       const response = await axiosPublic({
@@ -102,7 +102,7 @@ const ChatList = () => {
             <BiMessageDetail className="text-blue-500" />
             My Conversations
           </li>
-          
+
           {loading ? (
             <div className="flex flex-col gap-4">
               {[1, 2, 3].map((n) => (
@@ -145,8 +145,8 @@ const ChatList = () => {
                         </span>
                         {cUser.sender && ": "}
                         <span className="text-sm lg:text-base truncate">
-                          {cUser.lastMessage ? 
-                            `${cUser.lastMessage.slice(0, 10)}${cUser.lastMessage.length > 30 ? "..." : ""}` 
+                          {cUser.lastMessage ?
+                            `${cUser.lastMessage.slice(0, 10)}${cUser.lastMessage.length > 30 ? "..." : ""}`
                             : "No messages yet"}
                         </span>
                       </p>
@@ -165,7 +165,7 @@ const ChatList = () => {
                     </summary>
                     <ul className="dropdown-content menu bg-white rounded-box z-[1] w-52 p-2 shadow-lg">
                       <li>
-                        <button 
+                        <button
                           onClick={() => handleDeleteClick(cUser)}
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >

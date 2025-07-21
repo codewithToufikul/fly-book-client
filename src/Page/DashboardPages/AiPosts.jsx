@@ -9,32 +9,32 @@ const AiPosts = () => {
     const { isLoading, error, data, refetch } = useQuery({
         queryKey: ["aiPostData"],
         queryFn: () =>
-          fetch("https://api.flybook.com.bd/admin/post-ai").then((res) => res.json()),
-      });
+            fetch("https://api.flybook.com.bd/admin/post-ai").then((res) => res.json()),
+    });
     const axiosPublic = usePublicAxios();
     const [formData, setFormData] = useState({
-      title: "",
-      category: "",
-      message: "",
-      image: null,
+        title: "",
+        category: "",
+        message: "",
+        image: null,
     });
-  
+
     const [isEditing, setIsEditing] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
-  
+
     // Add this new state for tracking expanded messages
     const [expandedPosts, setExpandedPosts] = useState({});
-  
+
     const [selectedImage, setSelectedImage] = useState(null);
-  
+
     const handleInputChange = (e) => {
-      const { id, value } = e.target;
-      setFormData((prevState) => ({
-        ...prevState,
-        [id]: value,
-      }));
+        const { id, value } = e.target;
+        setFormData((prevState) => ({
+            ...prevState,
+            [id]: value,
+        }));
     };
-  
+
     // Handle delete post
     const handleDelete = async (id) => {
         try {
@@ -75,7 +75,7 @@ const AiPosts = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         setSelectedImage(file);
-        
+
         // Create a preview URL for the selected image
         if (file) {
             const previewUrl = URL.createObjectURL(file);
@@ -97,11 +97,11 @@ const AiPosts = () => {
         try {
             // Compress the image
             const compressedFile = await imageCompression(imageFile, options);
-            
+
             // Create form data with compressed image
             const formData = new FormData();
             formData.append('image', compressedFile);
-            
+
             // Upload to ImgBB
             const response = await fetch(
                 `https://api.imgbb.com/1/upload?key=8b86a561b76cd59e16d93c1098c5018a`,
@@ -110,7 +110,7 @@ const AiPosts = () => {
                     body: formData,
                 }
             );
-            
+
             const data = await response.json();
             return data.data.url;
         } catch (error) {
@@ -126,7 +126,7 @@ const AiPosts = () => {
 
         try {
             toast.loading('Processing...');
-            
+
             // Upload image if one is selected
             let imageUrl = formData.image;
             if (selectedImage) {
@@ -142,7 +142,7 @@ const AiPosts = () => {
                 time: currentTime,
                 likes: isEditing ? editingPost.likes : 0,
             };
-            
+
             if (isEditing) {
                 await axiosPublic.put(
                     `/admin/post-ai/${editingPost._id}`,
@@ -160,7 +160,7 @@ const AiPosts = () => {
                 toast.dismiss();
                 toast.success("Posted successfully!");
             }
-            
+
             setFormData({
                 title: "",
                 category: "",
@@ -240,9 +240,9 @@ const AiPosts = () => {
                                     />
                                     {formData.image && (
                                         <div className="mt-2">
-                                            <img 
-                                                src={formData.image} 
-                                                alt="Preview" 
+                                            <img
+                                                src={formData.image}
+                                                alt="Preview"
                                                 className="w-32 h-32 object-cover rounded"
                                             />
                                         </div>
@@ -300,8 +300,8 @@ const AiPosts = () => {
                                 <div className="flex justify-between items-start">
                                     <div className="w-full">
                                         {post.image && (
-                                            <img 
-                                                src={post.image} 
+                                            <img
+                                                src={post.image}
                                                 alt={post.title}
                                                 className="w-full max-w-md h-48 object-cover rounded-lg mb-4"
                                             />
@@ -310,8 +310,8 @@ const AiPosts = () => {
                                         <p className="text-gray-600 text-sm">{post.category}</p>
                                         <div className="mt-2">
                                             <p className="text-gray-800">
-                                                {expandedPosts[post._id] 
-                                                    ? post.message 
+                                                {expandedPosts[post._id]
+                                                    ? post.message
                                                     : truncateText(post.message)}
                                             </p>
                                             {post.message.length > 200 && (

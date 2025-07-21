@@ -15,7 +15,7 @@ const Organizations = () => {
       try {
         const response = await fetch("https://api.flybook.com.bd/api/v1/organizations/aprooved");
         const result = await response.json();
-        
+
         if (result.success) {
           setOrganizations(result.data);
         } else {
@@ -30,53 +30,28 @@ const Organizations = () => {
 
     fetchOrganizations();
   }, []);
-
+  const partnarOrg = organizations.filter(org => org.orgType === "partner organization");
   return (
     <div>
       <Navbar />
       <div>
-        <div className="hero">
-          <div className="hero-content flex-col lg:flex-row-reverse">
-            <img
-              src={organization}
-              className="max-w-lg rounded-lg animate-fade-in-scale"
-            />
-            <div>
-              <h1 className=" text-3xl lg:text-5xl font-bold">Partner with Leading Organizations</h1>
-              <p className="py-6 text-sm lg:text-base">
-                Connect and collaborate with top-tier organizations to accelerate your growth. 
-                Whether you're seeking partnerships, mentorship, or networking opportunities, 
-                our platform brings together innovative organizations committed to fostering 
-                success and driving meaningful impact.
-              </p>
-              <div className="form-control w-full max-w-md">
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Search organizations..." 
-                    className="input input-bordered w-full pr-16" 
-                  />
-                  <button className="btn btn-primary absolute top-0 right-0 rounded-l-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto px-4 py-6 gap-4">
-            <div className="text-xl md:text-2xl font-bold text-gray-700 underline text-center md:text-left">All Organizations</div>
-            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                <Link to="/my-organizations" className="btn btn-secondary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-secondary-dark transition-all duration-300 flex items-center justify-center gap-2">
-                    <span>My Organizations</span>
-                </Link>
-                <Link to="/add-organization" className="btn btn-primary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-primary-dark transition-all duration-300 flex items-center justify-center gap-2">
-                    <FaPlus className="text-sm" />
-                    <span>Add Your Organization</span>
-                </Link>
-            </div>
+          <div className="text-xl md:text-2xl font-bold text-gray-700 underline text-center md:text-left">All Partnar Organizations</div>
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <Link to="/organizations-events" className="btn btn-accent rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-secondary-dark transition-all duration-300 flex items-center justify-center gap-2">
+              <span>Events</span>
+            </Link>
+            <Link to="/my-organizations" className="btn btn-secondary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-secondary-dark transition-all duration-300 flex items-center justify-center gap-2">
+              <span>My Organizations</span>
+            </Link>
+            <Link to="/social-organizations" className="btn btn-info rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-secondary-dark transition-all duration-300 flex items-center justify-center gap-2">
+              <span>Social Organizations</span>
+            </Link>
+            <Link to="/add-organization" className="btn btn-primary rounded-full w-full md:w-auto px-4 py-2 text-white font-bold hover:bg-primary-dark transition-all duration-300 flex items-center justify-center gap-2">
+              <FaPlus className="text-sm" />
+              <span>Add Your Organization</span>
+            </Link>
+          </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {loading ? (
@@ -87,12 +62,12 @@ const Organizations = () => {
             <div className="col-span-full text-center py-8 text-error">
               {error}
             </div>
-          ) : organizations.length === 0 ? (
+          ) : partnarOrg.length === 0 ? (
             <div className="col-span-full text-center py-8 text-gray-500">
               No organizations found
             </div>
           ) : (
-            organizations.map((org) => (
+            partnarOrg.slice().reverse().map((org) => (
               <div key={org._id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
                 <figure className="px-4 pt-4">
                   <img

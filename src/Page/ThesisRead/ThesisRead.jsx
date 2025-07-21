@@ -29,7 +29,7 @@ const ThesisRead = () => {
       <Navbar />
       <div className=" max-w-[1120px] mx-auto px-2 mt-3">
         <div className=" flex items-center gap-2">
-        <p className=" text-lg">Post date:</p>
+          <p className=" text-lg">Post date:</p>
           <p className=" text-sm">
             {readThesis.time.slice(0, -6) + readThesis.time.slice(-3)}
           </p>

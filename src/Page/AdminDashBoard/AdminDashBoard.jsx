@@ -2,7 +2,7 @@ import React from "react";
 import { FaCodePullRequest } from "react-icons/fa6";
 import { ImBooks } from "react-icons/im";
 import { IoLibraryOutline, IoPeopleSharp } from "react-icons/io5";
-import { MdCategory, MdOutlineDoNotDisturb } from "react-icons/md";
+import { MdCategory, MdEventNote, MdOutlineDoNotDisturb } from "react-icons/md";
 import { TbArrowsTransferUpDown, TbBooks } from "react-icons/tb";
 import { VscGitPullRequestCreate } from "react-icons/vsc";
 import { SiAwsorganizations } from "react-icons/si";
@@ -13,7 +13,9 @@ import { BsFilePost } from "react-icons/bs";
 import { FaFilePdf, FaHome } from "react-icons/fa";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { BiSolidBookAdd } from "react-icons/bi";
-
+import { GrChannel } from "react-icons/gr";
+import { PiChalkboardTeacher } from "react-icons/pi";
+import { MdOutlineBookmarkAdd } from "react-icons/md";
 
 const AdminDashBoard = () => {
   return (
@@ -30,7 +32,7 @@ const AdminDashBoard = () => {
             </label>
           </div>
           <div className=" w-full">
-            <Outlet/>
+            <Outlet />
           </div>
         </div>
         <div className="drawer-side z-50">
@@ -40,7 +42,7 @@ const AdminDashBoard = () => {
             className="drawer-overlay"
           ></label>
           <ul className="px-1 space-y-3 menu bg-base-200 min-h-full w-72 p-4">
-            <Link to={'/dashboard'} className=" flex justify-center ">
+            <Link to={"/dashboard"} className=" flex justify-center ">
               <img className=" w-24 lg:w-36" src={logo} alt="" />
             </Link>
             <li className="">
@@ -55,7 +57,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/add-post"}
               >
                 <span className="text-xl lg:text-2xl">
-                <IoMdAddCircleOutline />
+                  <IoMdAddCircleOutline />
                 </span>
                 Add Post
               </NavLink>
@@ -72,7 +74,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/all-posts"}
               >
                 <span className="text-xl lg:text-2xl">
-                <BsFilePost />
+                  <BsFilePost />
                 </span>
                 All Posts
               </NavLink>
@@ -89,7 +91,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/add-category"}
               >
                 <span className="text-xl lg:text-2xl">
-                <MdCategory />
+                  <MdCategory />
                 </span>
                 Add Category
               </NavLink>
@@ -106,7 +108,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/thesis-post"}
               >
                 <span className="text-xl lg:text-2xl">
-                <IoMdAddCircleOutline />
+                  <IoMdAddCircleOutline />
                 </span>
                 Add Research Articles
               </NavLink>
@@ -123,7 +125,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/add-ai-post"}
               >
                 <span className="text-xl lg:text-2xl">
-                <IoMdAddCircleOutline />
+                  <IoMdAddCircleOutline />
                 </span>
                 Add Ai Post
               </NavLink>
@@ -140,7 +142,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/add-pdf"}
               >
                 <span className="text-xl lg:text-2xl">
-                <BiSolidBookAdd />
+                  <BiSolidBookAdd />
                 </span>
                 Add PDF book
               </NavLink>
@@ -157,7 +159,7 @@ const AdminDashBoard = () => {
                 to={"/dashboard/all-pdf-books"}
               >
                 <span className="text-xl lg:text-2xl">
-                <FaFilePdf />
+                  <FaFilePdf />
                 </span>
                 All PDF Books
               </NavLink>
@@ -208,12 +210,96 @@ const AdminDashBoard = () => {
                 to={"/dashboard/manage-organizations"}
               >
                 <span className="text-lg">
-                <SiAwsorganizations />
+                  <SiAwsorganizations />
                 </span>
                 Manage Organizations
               </NavLink>
             </li>
-            
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/organizations-controller"}
+              >
+                <span className="text-lg">
+                  <SiAwsorganizations />
+                </span>
+                All Organizations
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/events-management"}
+              >
+                <span className="text-lg">
+                  <MdEventNote />
+                </span>
+                Events Management
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/manage-channels"}
+              >
+                <span className="text-lg">
+                  <GrChannel />
+                </span>
+                Channel Manage
+              </NavLink>
+            </li>
+                    <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/add-course"}
+              >
+                <span className="text-lg">
+                  <MdOutlineBookmarkAdd />
+                </span>
+               Add Course
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                    ? "pending"
+                    : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/manage-course"}
+              >
+                <span className="text-lg">
+                  <PiChalkboardTeacher />
+                </span>
+                Course Management
+              </NavLink>
+            </li>
             <li>
               <NavLink
                 className={({ isActive, isPending }) =>

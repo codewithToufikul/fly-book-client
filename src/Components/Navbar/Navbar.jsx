@@ -168,13 +168,13 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && 
-          !dropdownRef.current.contains(e.target) && 
-          !buttonRef.current.contains(e.target)) {
+      if (dropdownRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        !buttonRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
@@ -347,10 +347,10 @@ const Navbar = () => {
     const handleClickOutside = (e) => {
       const mobileMenu = document.querySelector('#mobile-menu');
       const menuButton = document.querySelector('#mobile-menu-button');
-      
-      if (mobileMenu && 
-          !mobileMenu.contains(e.target) && 
-          !menuButton.contains(e.target)) {
+
+      if (mobileMenu &&
+        !mobileMenu.contains(e.target) &&
+        !menuButton.contains(e.target)) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -404,9 +404,8 @@ const Navbar = () => {
         </div>
       </div>
       <div
-        className={`navbar bg-gray-50  p-0 transition-transform duration-300 border-b-2  ${
-          window.innerWidth <= 768 ? (showNav ? "" : "opacity-0 ") : ""
-        }`}
+        className={`navbar bg-gray-50  p-0 transition-transform duration-300 border-b-2  ${window.innerWidth <= 768 ? (showNav ? "" : "opacity-0 ") : ""
+          }`}
       >
         <div className="w-full lg:navbar-start">
           <ul
@@ -427,14 +426,13 @@ const Navbar = () => {
                 </div>
                 <ul
                   id="mobile-menu"
-                  className={`menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-60 p-2 shadow ${
-                    isMobileMenuOpen ? 'block' : 'hidden'
-                  }`}
+                  className={`menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-60 p-2 shadow ${isMobileMenuOpen ? 'block' : 'hidden'
+                    }`}
                 >
                   <li>
                     <Link
                       to={"/peoples"}
-                      
+
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
@@ -446,7 +444,7 @@ const Navbar = () => {
                   <li>
                     <Link
                       to={"/my-library"}
-                      
+
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
@@ -466,7 +464,7 @@ const Navbar = () => {
                   <li>
                     <Link
                       to={"https://bookoffen.com/"}
-                      
+
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
@@ -475,30 +473,30 @@ const Navbar = () => {
                       <h2 className=" text-sm font-normal">Market Place</h2>
                     </Link>
                   </li>
-                  <li onClick={handleUpcoming}>
+                  <Link to={'/e-learning'}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={elng} alt="" />
                       </div>
                       <h2 className=" text-sm font-normal">E-Learning</h2>
                     </div>
-                  </li>
-                  <li onClick={handleUpcoming}>
+                  </Link>
+                  <Link to={'/channers'}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={channel} alt="" />
                       </div>
                       <h2 className=" text-sm font-normal">Channels</h2>
                     </div>
-                  </li>
-                  <li onClick={handleUpcoming}>
+                  </Link>
+                  <Link to={'/audio-book'}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
                         <img className=" w-full" src={audioBook} alt="" />
                       </div>
                       <h2 className=" text-sm font-normal">Audio Book</h2>
                     </div>
-                  </li>
+                  </Link>
                   <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
@@ -508,14 +506,14 @@ const Navbar = () => {
                     </div>
                   </li>
                   <li>
-          <Link
-            to={"/organizations"}
-            className=" flex items-center gap-3 hover:bg-gray-200 hover:shadow-md rounded-md cursor-pointer"
-          >
-            <p className=" text-xl"><FcOrganization /></p>
-            <h2 className=" text-sm">Unlocking your potential with-</h2>
-          </Link>
-        </li>
+                    <Link
+                      to={"/organizations"}
+                      className=" flex items-center gap-3 hover:bg-gray-200 hover:shadow-md rounded-md cursor-pointer"
+                    >
+                      <p className=" text-xl"><FcOrganization /></p>
+                      <h2 className=" text-sm">Unlocking your potential with-</h2>
+                    </Link>
+                  </li>
                   <li onClick={handleUpcoming}>
                     <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
                       <div className=" w-6 ">
@@ -536,18 +534,18 @@ const Navbar = () => {
                   </li>
                   <li>
                     <Link
-                      to={"/contract-us"}
-                      
+                      to={"/contact-us"}
+
                       className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
                     >
                       <div className=" w-6 ">
                         <img className=" w-full" src={help} alt="" />
                       </div>
-                      <h2 className=" text-sm font-normal">Contract Us</h2>
+                      <h2 className=" text-sm font-normal">Contact Us</h2>
                     </Link>
                   </li>
                   <li>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left hover:bg-gray-200 rounded-md"
                     >
@@ -599,11 +597,11 @@ const Navbar = () => {
                 <FaShop />
               </a>
             </li>
-            <li className=" " onClick={handleUpcoming}>
+            <Link to={'/e-learning'}>
               <a className=" text-3xl lg:text-4xl">
                 <FaUserGraduate />
               </a>
-            </li>
+            </Link>
             <li className=" ">
               <Link to={"/pdf-book"} className=" text-3xl lg:text-4xl">
                 <MdPictureAsPdf />
@@ -662,8 +660,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 to={"/"}
               >
@@ -674,10 +672,10 @@ const Navbar = () => {
               <NavLink
                 className={({ isActive, isPending }) =>
                   isActive
-                    ? "bg-gray-300 text-4xl"
+                    ? " text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 to={"/peoples"}
               >
@@ -788,8 +786,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 to={"/public-opinion"}
               >
@@ -802,8 +800,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 to="/notifications"
               >
@@ -821,8 +819,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="Market"
@@ -830,14 +828,15 @@ const Navbar = () => {
                 <FaShop />
               </NavLink>
             </li>
-            <li className=" " onClick={handleUpcoming}>
+            <li className=" " >
               <NavLink
+                to={'/e-learning'}
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="E-Learning"
@@ -852,8 +851,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                    ? "pending"
-                    : "font-bold text-4xl"
+                      ? "pending"
+                      : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="PDF Book"

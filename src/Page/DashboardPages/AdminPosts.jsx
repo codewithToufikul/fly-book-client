@@ -153,7 +153,7 @@ const AdminPosts = () => {
       <dialog id="my_modal_3" className="modal">
         <div className="modal-box">
           <form method="dialog">
-            <button onClick={()=>{setSelectedPost(null)}} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+            <button onClick={() => { setSelectedPost(null) }} className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
               ✕
             </button>
           </form>
