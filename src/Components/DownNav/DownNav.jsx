@@ -42,7 +42,7 @@ const DownNav = () => {
   }, []);
 
   useEffect(() => {
-    const newSocket = io("https://api.flybook.com.bd", {
+    const newSocket = io("https://flybook.com.bd", {
       transports: ["websocket"],
       withCredentials: true,
     });
@@ -191,12 +191,10 @@ const DownNav = () => {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-gray-200 shadow-md lg:hidden z-50 ">
       <ul className="flex justify-around items-center py-2">
-        {/* Home link */}
 
-        {/* Peoples link */}
         <li >
         <NavLink
-            to="/nearby-friends"
+            to="/nearby-books"
             className={({ isActive }) =>
               isActive ? "text-[32px] text-blue-500" : "text-[32px] text-gray-700"
             }
@@ -204,8 +202,6 @@ const DownNav = () => {
             <MdPersonPinCircle />
           </NavLink>
         </li>
-
-        {/* Add new link */}
 
         <div
           id="dropdown"

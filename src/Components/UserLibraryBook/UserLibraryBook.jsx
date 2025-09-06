@@ -12,7 +12,7 @@ const UserLibraryBook = () => {
   const { allBooks, isLoading, refetch } = useAllBook();
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
-  const socket = io("https://api.flybook.com.bd");
+  const socket = io("https://flybook.com.bd");
 
   if (loading || isLoading) {
     return (

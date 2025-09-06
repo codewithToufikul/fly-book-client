@@ -56,7 +56,7 @@ const MassegeBox = () => {
 
   useEffect(() => {
     // Initialize the Socket.IO connection
-    const newSocket = io("https://api.flybook.com.bd", {
+    const newSocket = io("https://flybook.com.bd", {
       transports: ["websocket"], // Use WebSocket transport directly
       withCredentials: true, // If your server requires credentials for CORS
     });
@@ -295,7 +295,7 @@ const MassegeBox = () => {
     setDeleteLoading(true);
     try {
       const response = await fetch(
-        `https://api.flybook.com.bd/api/delete-message/${messageId}`,
+        `https://flybook.com.bd/api/delete-message/${messageId}`,
         {
           method: "DELETE",
           headers: {

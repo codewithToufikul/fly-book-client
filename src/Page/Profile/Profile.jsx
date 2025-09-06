@@ -35,6 +35,8 @@ const Profile = () => {
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [isVideoStarted, setIsVideoStarted] = useState(false);
   const [updateLogin, setUpdateLogin] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [detectionInterval, setDetectionInterval] = useState(null);
   const videoRef = useRef(null);
   const navigate = useNavigate();
   const axiosPublic = usePublicAxios();
@@ -58,11 +60,24 @@ const Profile = () => {
 
     // Load face-api models
     const loadModels = async () => {
-      setFaceApiLoading(true);
-      await faceapi.nets.ssdMobilenetv1.loadFromUri("/models");
-      await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
-      await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
-      setFaceApiLoading(false);
+      try {
+        setFaceApiLoading(true);
+        console.log("Loading face-api models...");
+        
+        await Promise.all([
+          faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("/models")
+        ]);
+        
+        setModelsLoaded(true);
+        setFaceApiLoading(false);
+        console.log("Face-api models loaded successfully");
+      } catch (error) {
+        console.error("Error loading face-api models:", error);
+        setFaceApiLoading(false);
+        toast.error("Failed to load face detection models");
+      }
     };
 
     // Fetch notes
@@ -125,21 +140,21 @@ const Profile = () => {
       if (response.data.success) {
         postRefetch();
       } else {
-        toast.error("Failed to like the post:", response.data.error);
+        toast.error("Failed to unlike the post:", response.data.error);
       }
     } catch (error) {
-      console.error("Error liking post:", error);
+      console.error("Error unliking post:", error);
     }
   };
 
   const updateVerificationStatus = async (status) => {
     try {
       await axios.put(
-        "https://api.flybook.com.bd/profile/verification",
+        "http://localhost:3000/profile/verification",
         { verificationStatus: status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Verification status updated successfully!");
+      toast.success("Face verification completed successfully!");
       refetch();
     } catch (error) {
       console.error("Error updating verification status:", error);
@@ -147,39 +162,132 @@ const Profile = () => {
     }
   };
 
-  const startDetection = async () => {
-    videoRef.current.onloadeddata = () => {
-      const detectionInterval = setInterval(async () => {
-        const detections = await faceapi
-          .detectAllFaces(videoRef.current)
-          .withFaceLandmarks()
-          .withFaceDescriptors();
-
-        if (detections.length > 0) {
-          setVerificationStatus("Face Verified");
-          await updateVerificationStatus(true);
-          clearInterval(detectionInterval);
-          stopCamera();
-        } else {
-          setVerificationStatus("No Face Detected");
-        }
-      }, 100);
-    };
-  };
-
-  const stopCamera = () => {
-    const stream = videoRef.current.srcObject;
-    setIsVideoStarted(false);
-    if (stream) {
-      const tracks = stream.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
+  const startVideo = async () => {
+    try {
+      console.log("Starting camera...");
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: 640, 
+          height: 480,
+          facingMode: 'user'
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          console.log("Video metadata loaded, starting playback");
+          videoRef.current.play();
+        };
+      }
+      
+      return stream;
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      let errorMessage = "Failed to access camera. ";
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += "Please allow camera permission.";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += "No camera found.";
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += "Camera is already in use.";
+      } else {
+        errorMessage += "Please check your camera settings.";
+      }
+      
+      toast.error(errorMessage);
+      setIsVideoStarted(false);
+      throw error;
     }
   };
 
-  const startVerification = () => {
-    setIsVideoStarted(true);
-    startVideo().then(startDetection);
+  const startDetection = async () => {
+    if (!modelsLoaded) {
+      toast.error("Face detection models not loaded yet. Please wait.");
+      return;
+    }
+
+    console.log("Starting face detection...");
+    setVerificationStatus("Detecting face...");
+    
+    const interval = setInterval(async () => {
+      if (videoRef.current && videoRef.current.videoWidth > 0) {
+        try {
+          const detections = await faceapi
+            .detectAllFaces(videoRef.current, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+
+          console.log(`Detected ${detections.length} faces`);
+
+          if (detections.length > 0) {
+            setVerificationStatus("Face detected and verified!");
+            await updateVerificationStatus(true);
+            clearInterval(interval);
+            setDetectionInterval(null);
+            
+            // Stop camera after successful verification
+            setTimeout(() => {
+              stopCamera();
+            }, 2000);
+          } else {
+            setVerificationStatus("Please position your face in the camera");
+          }
+        } catch (error) {
+          console.error("Face detection error:", error);
+          setVerificationStatus("Detection error. Please try again.");
+        }
+      }
+    }, 500); // Check every 500ms for better performance
+
+    setDetectionInterval(interval);
+  };
+
+  const stopCamera = () => {
+    console.log("Stopping camera...");
+    
+    // Clear detection interval
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+      setDetectionInterval(null);
+    }
+    
+    // Stop video stream
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => {
+        track.stop();
+        console.log(`Stopped ${track.kind} track`);
+      });
+      videoRef.current.srcObject = null;
+    }
+    
+    setIsVideoStarted(false);
+    setVerificationStatus(null);
+  };
+
+  const startVerification = async () => {
+    if (!modelsLoaded) {
+      toast.error("Face detection models are still loading. Please wait.");
+      return;
+    }
+
+    try {
+      setIsVideoStarted(true);
+      setVerificationStatus("Starting camera...");
+      
+      await startVideo();
+      
+      // Wait a bit for video to stabilize before starting detection
+      setTimeout(() => {
+        startDetection();
+      }, 1000);
+    } catch (error) {
+      setIsVideoStarted(false);
+      setVerificationStatus("Camera failed to start");
+    }
   };
 
   const handleImageChange = async (e) => {
@@ -216,7 +324,7 @@ const Profile = () => {
         const imageUrl = response.data.data.url;
 
         await axios.put(
-          "https://api.flybook.com.bd/profile/update",
+          "http://localhost:3000/profile/update",
           { profileImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -265,7 +373,7 @@ const Profile = () => {
         console.log(imageUrl);
 
         await axios.put(
-          "https://api.flybook.com.bd/profile/cover/update",
+          "http://localhost:3000/profile/cover/update",
           { coverImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -316,7 +424,7 @@ const Profile = () => {
 
     try {
       const response = await axios.put(
-        "https://api.flybook.com.bd/profile/updateDetails",
+        "http://localhost:3000/profile/updateDetails",
         updateDetails,
         {
           headers: {
@@ -347,7 +455,7 @@ const Profile = () => {
       const updateDetails = { userLocation: { latitude, longitude } };
 
       const response = await axios.put(
-        "https://api.flybook.com.bd/profile/updateDetails/location",
+        "http://localhost:3000/profile/updateDetails/location",
         updateDetails,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -553,56 +661,91 @@ const Profile = () => {
               </ul>
             </div>
             <dialog id="my_modal_3" className="modal">
-              <div className="modal-box">
+              <div className="modal-box max-w-2xl">
                 <form method="dialog">
-                  <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                  <button 
+                    className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+                    onClick={stopCamera}
+                  >
                     ✕
                   </button>
                 </form>
-                <h1 className=" text-xl font-medium text-center">
+                <h1 className="text-xl font-medium text-center mb-4">
                   Face Verification
                 </h1>
-                <div>
+                
+                {faceApiLoading && (
+                  <div className="text-center mb-4">
+                    <div className="loading loading-spinner loading-md"></div>
+                    <p className="text-sm text-gray-600 mt-2">Loading face detection models...</p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
                   {user.verificationStatus ? (
-                    <div className=" flex justify-center">
-                      <img className=" w-[200px]" src={done} alt="" />
+                    <div className="flex flex-col items-center">
+                      <img className="w-[200px]" src={done} alt="Verified" />
+                      <p className="text-green-600 font-medium mt-2">Face Already Verified ✅</p>
                     </div>
                   ) : (
-                    <div className="flex justify-between mt-4">
-                      {isVideoStarted ? (
-                        <p>Verification in Progress</p>
-                      ) : (
-                        <button
-                          className="btn btn-primary"
-                          onClick={startVerification}
-                        >
-                          Start Camera
-                        </button>
+                    <>
+                      <div className="flex justify-center gap-4 mb-4">
+                        {!isVideoStarted ? (
+                          <button
+                            className={`btn btn-primary ${faceApiLoading ? 'btn-disabled' : ''}`}
+                            onClick={startVerification}
+                            disabled={faceApiLoading || !modelsLoaded}
+                          >
+                            {faceApiLoading ? 'Loading Models...' : 'Start Camera'}
+                          </button>
+                        ) : (
+                          <button 
+                            className="btn btn-error" 
+                            onClick={stopCamera}
+                          >
+                            Stop Camera
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="bg-gray-100 rounded-lg p-4 flex justify-center">
+                        <video
+                          ref={videoRef}
+                          width="400"
+                          height="300"
+                          autoPlay
+                          muted
+                          className="rounded-lg border-2 border-gray-300"
+                          style={{ 
+                            display: isVideoStarted ? 'block' : 'none',
+                            transform: 'scaleX(-1)' // Mirror the video for better user experience
+                          }}
+                        />
+                        {!isVideoStarted && (
+                          <div className="flex items-center justify-center w-[400px] h-[300px] bg-gray-200 rounded-lg">
+                            <div className="text-center">
+                              <IoVideocam className="mx-auto text-6xl text-gray-400 mb-2" />
+                              <p className="text-gray-600">Camera preview will appear here</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {verificationStatus && (
+                        <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
+                          <p className="text-blue-800 font-medium">
+                            {verificationStatus}
+                          </p>
+                        </div>
                       )}
-                      <button className="btn btn-error" onClick={stopCamera}>
-                        Stop
-                      </button>
-                    </div>
+
+                      <div className="text-center text-sm text-gray-600">
+                        <p>• Position your face clearly in the camera</p>
+                        <p>• Ensure good lighting</p>
+                        <p>• Look directly at the camera</p>
+                      </div>
+                    </>
                   )}
-
-                  <video
-                    className="rounded-full lg:rounded-none h-full w-full"
-                    ref={videoRef}
-                    width="340"
-                    height="540"
-                    autoPlay
-                    muted
-                  />
-
-                  {faceApiLoading && <div>Loading models...</div>}
-
-                  <div>
-                    <p className="text-lg font-medium text-center">
-                      {user.verificationStatus == true
-                        ? "Verify success"
-                        : "Not verified"}
-                    </p>
-                  </div>
                 </div>
               </div>
             </dialog>

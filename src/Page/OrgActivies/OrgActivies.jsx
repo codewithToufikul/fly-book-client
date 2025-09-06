@@ -11,7 +11,7 @@ const OrgActivies = () => {
     useEffect(() => {
         const fetchOrganization = async () => {
             try {
-                const response = await fetch(`https://api.flybook.com.bd/api/v1/organizations/${orgId}`);
+                const response = await fetch(`http://localhost:3000/api/v1/organizations/${orgId}`);
                 const result = await response.json();
                 setOrganization(result.data);
             } catch (err) {

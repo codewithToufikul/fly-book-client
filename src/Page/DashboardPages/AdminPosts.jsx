@@ -15,7 +15,7 @@ const AdminPosts = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("https://api.flybook.com.bd/all-home-books").then((res) => res.json()),
+      fetch("http://localhost:3000/all-home-books").then((res) => res.json()),
   });
 
   const toggleExpand = (id) => {

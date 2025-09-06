@@ -76,7 +76,7 @@ export default function AddActivities() {
                 organizationId: orgId
             };
 
-            const response = await fetch('https://api.flybook.com.bd/api/v1/activities', {
+            const response = await fetch('http://localhost:3000/api/v1/activities', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

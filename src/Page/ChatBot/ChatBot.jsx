@@ -108,7 +108,7 @@ function ChatBot() {
         content: data.candidates[0].content.parts[0].text,
         timestamp: new Date()
       };
-
+      console.log(assistantMessage)
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);

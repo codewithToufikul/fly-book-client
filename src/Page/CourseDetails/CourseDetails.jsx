@@ -17,7 +17,7 @@ function CourseDetails() {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await fetch(`https://api.flybook.com.bd/api/courses/${courseId}`);
+        const res = await fetch(`http://localhost:3000/api/courses/${courseId}`);
         if (!res.ok) {
           throw new Error("Failed to fetch course");
         }

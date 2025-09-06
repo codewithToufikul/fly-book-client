@@ -8,7 +8,7 @@ const Thesis = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("https://api.flybook.com.bd/thesis").then((res) => res.json()),
+      fetch("http://localhost:3000/thesis").then((res) => res.json()),
   });
 
   if (isLoading) {

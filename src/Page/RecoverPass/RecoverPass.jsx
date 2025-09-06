@@ -13,7 +13,7 @@ const RecoverPass = () => {
     e.preventDefault();
     setLoading(true); // Start loading state
     try {
-      const res = await axios.post("https://api.flybook.com.bd/forgot-password", { email });
+      const res = await axios.post("http://localhost:3000/forgot-password", { email });
       if (res.data.Status === "Success") {
         toast.success("Reset mail sent, please check!");
         navigate("/login");

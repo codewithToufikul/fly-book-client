@@ -34,7 +34,7 @@ function ManageCourse() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch('https://api.flybook.com.bd/api/courses');
+        const res = await fetch('http://localhost:3000/api/courses');
         const data = await res.json();
         setCourses(data);
       } catch (error) {
@@ -50,7 +50,7 @@ function ManageCourse() {
   const handleRemoveCourse = async (courseId) => {
     if (window.confirm('Are you sure you want to remove this course?')) {
       try {
-        const res = await fetch(`https://api.flybook.com.bd/api/courses/${courseId}`, {
+        const res = await fetch(`http://localhost:3000/api/courses/${courseId}`, {
           method: 'DELETE',
         });
         if (res.ok) {
@@ -68,7 +68,7 @@ function ManageCourse() {
   const handleAddVideo = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`https://api.flybook.com.bd/api/courses/${selectedCourse._id}/videos`, {
+      const res = await fetch(`http://localhost:3000/api/courses/${selectedCourse._id}/videos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ function ManageCourse() {
   const handleRemoveVideo = async (videoIndex) => {
     if (window.confirm('Are you sure you want to remove this video?')) {
       try {
-        const res = await fetch(`https://api.flybook.com.bd/api/courses/${selectedCourse._id}/videos/${videoIndex}`, {
+        const res = await fetch(`http://localhost:3000/api/courses/${selectedCourse._id}/videos/${videoIndex}`, {
           method: 'DELETE',
         });
 

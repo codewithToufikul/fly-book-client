@@ -11,7 +11,7 @@ const MyOnindoRequest = () => {
   const { user, loading } = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
-  const socket = io("https://api.flybook.com.bd");
+  const socket = io("https://flybook.com.bd");
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">

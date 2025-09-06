@@ -72,6 +72,42 @@ import AddCourse from "./DashboardPages/AddCourse"
 import ChannelBox from "./ChannelBox/ChannelBox";
 import ChatBot from "./ChatBot/ChatBot";
 import ManageCourse from "./DashboardPages/ManageCourse";
+import AboutUs from "./AboutUs/AboutUs";
+import PrivacyPolicy from "./PrivacyPolicy/PrivacyPolicy";
+import TermsConditions from "./TermsConditions/TermsConditions";
+import HomePostDetails from "./HomePostDetails/HomePostDetails";
+import MarketplaceHome from "./Marketplace/MarketplaceHome/MarketplaceHome";
+import PostDetail from "./PostDetail/PostDetail";
+import { patch } from "@mui/material";
+import FullMessageView from "./FullMessageView/FullMessageView";
+import MarketUser from "./MarketUser/MarketUser";
+import ReqSeller from "./Marketplace/ReqSeller/ReqSeller";
+import ProductDetails from "./Marketplace/ProductDetails/ProductDetails";
+import CategoryProduct from "./Marketplace/CategoryProduct/CategoryProduct";
+import MSearchPage from "./Marketplace/MSearchPage/MSearchPage";
+import CartPage from "./Marketplace/CartPage/CartPage";
+import BuyNowPage from "./Marketplace/BuyNowPage/BuyNowPage";
+import PaymentPage from "./Marketplace/PaymentPage/PaymentPage";
+import MarketAdmin from "./Marketplace/MarketAdmin/MarketAdmin";
+import AdminOverview from "./Marketplace/MarketAdmin/AdminOverview";
+import { SellersData } from "./Marketplace/MarketAdmin/SellersData";
+import SellerRequest from "./Marketplace/MarketAdmin/SellerRequest";
+import SellerProfileAccess from "./Marketplace/SellerProfileAccess/SellerProfileAccess";
+import SellerDashboard from "./Marketplace/SellerDashboard/SellerDashboard";
+import SellerOverview from "./Marketplace/SellerDashboard/SellerDashboardPage/SellerOverview";
+import SellerPrivet from "./Marketplace/SellerDashboard/SellerPrivet";
+import AddProduct from "./Marketplace/SellerDashboard/SellerDashboardPage/AddProduct";
+import AllSellerProducts from "./Marketplace/SellerDashboard/SellerDashboardPage/AllSellerProducts";
+import SellerOrders from "./Marketplace/SellerDashboard/SellerDashboardPage/SellerOrders";
+import SellerPayments from "./Marketplace/SellerDashboard/SellerDashboardPage/SellerPayments";
+import SellerProfile from "./Marketplace/SellerDashboard/SellerDashboardPage/SellerProfile";
+import SellerWithdrawPage from "./Marketplace/SellerDashboard/SellerDashboardPage/SellerWithdrawPage";
+import AdminProducts from "./Marketplace/MarketAdmin/AdminProducts";
+import AdminCategories from "./Marketplace/MarketAdmin/AdminCategories";
+import AdminProductsOrders from "./Marketplace/MarketAdmin/AdminProductsOrders";
+import AdminPaymentPage from "./Marketplace/MarketAdmin/AdminPaymentPage";
+import BannerRequest from "./Marketplace/SellerDashboard/SellerDashboardPage/BannerRequest";
+import AdminBannerRequest from "./Marketplace/MarketAdmin/AdminBannerRequest";
 
 export const router = createBrowserRouter([
     {
@@ -273,7 +309,7 @@ export const router = createBrowserRouter([
         path: '/contact-us',
         element: <ContractUs></ContractUs>
     }, {
-        path: "/nearby-friends",
+        path: "/nearby-books",
         element: <PrivateRoute><NearbyFriends></NearbyFriends></PrivateRoute>
     }, {
         path: "/pdf-book",
@@ -354,6 +390,142 @@ export const router = createBrowserRouter([
     {
         path: '/chatbot',
         element: <ChatBot />
+    },
+    {
+        path: '/about-us',
+        element: <AboutUs/>
+    },
+    {
+        path: '/privacy-policy',
+        element: <PrivacyPolicy/>
+    },
+    {
+        path: '/terms-conditions',
+        element: <TermsConditions/>
+    },
+    {
+        path: '/post-details/:id',
+        element: <HomePostDetails/>
+    },
+    {
+        path: '/marketplace',
+        element: <MarketplaceHome/>
+    },
+    {
+        path: '/market-user',
+        element: <PrivateRoute><SellerProfileAccess><MarketUser/></SellerProfileAccess></PrivateRoute>
+    },{
+        path: '/seller-dashboard',
+        element: <PrivateRoute><SellerPrivet><SellerDashboard/></SellerPrivet></PrivateRoute>,
+        children:[
+            {
+                index: true,
+                element: <PrivateRoute><SellerPrivet><SellerOverview/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/add-product',
+                element:<PrivateRoute><SellerPrivet><AddProduct/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/products',
+                element: <PrivateRoute><SellerPrivet><AllSellerProducts/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/orders',
+                element: <PrivateRoute><SellerPrivet><SellerOrders/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/payments',
+                element: <PrivateRoute><SellerPrivet><SellerPayments/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/profile',
+                element: <PrivateRoute><SellerPrivet><SellerProfile/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/withdraw',
+                element: <PrivateRoute><SellerPrivet><SellerWithdrawPage/></SellerPrivet></PrivateRoute>
+            },
+            {
+                path: '/seller-dashboard/home-banner',
+                element: <PrivateRoute><SellerPrivet><BannerRequest/></SellerPrivet></PrivateRoute>
+            }
+        ]
+
+    },
+    {
+        path: '/seller-request',
+        element: <PrivateRoute><ReqSeller/></PrivateRoute>
+    },
+    {
+        path: '/product-details/:productId',
+        element: <ProductDetails/>
+    },
+    {
+        path: '/category-product/:categoryId',
+        element: <CategoryProduct/>
+    },
+    {
+        path: '/product-search',
+        element: <MSearchPage/>
+    },
+    {
+        path: '/cart',
+        element: <PrivateRoute><CartPage/></PrivateRoute>
+    },
+    {
+        path: '/cart-checkout',
+        element: <PrivateRoute><BuyNowPage/></PrivateRoute>
+    },
+    {
+        path: '/payment/:orderId',
+        element: <PrivateRoute><PaymentPage/></PrivateRoute>
+    },
+    {
+        path: '/opinion-post/:postId',
+        element: <PrivateRoute><PostDetail/></PrivateRoute>
+    },
+    {
+        path: '/market-dashboard',
+        element: <AdminRoute><PrivateRoute><MarketAdmin/></PrivateRoute></AdminRoute>,
+        children: [
+            {
+                index: true,
+                element: <AdminRoute><PrivateRoute><AdminOverview/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/sellers',
+                element: <AdminRoute><PrivateRoute><SellersData/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/seller-requests',
+                element:<AdminRoute><PrivateRoute><SellerRequest/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/products',
+                element: <AdminRoute><PrivateRoute><AdminProducts/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/product-categories',
+                element: <AdminRoute><PrivateRoute><AdminCategories/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/orders',
+                element: <AdminRoute><PrivateRoute><AdminProductsOrders/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/payments',
+                element: <AdminRoute><PrivateRoute><AdminPaymentPage/></PrivateRoute></AdminRoute>
+            },
+            {
+                path: '/market-dashboard/banner-manage',
+                element: <AdminRoute><PrivateRoute><AdminBannerRequest/></PrivateRoute></AdminRoute>
+            }
+        ]
+    },
+    {
+        path: '/channels/:channelId/messages/:messageId',
+        element: <PrivateRoute><FullMessageView/></PrivateRoute>
     },
     {
         path: '*',

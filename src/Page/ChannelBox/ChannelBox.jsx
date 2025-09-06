@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Navbar from '../../Components/Navbar/Navbar';
 import DownNav from '../../Components/DownNav/DownNav';
-import { useParams } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
 import useUser from '../../Hooks/useUser';
 
 function ChannelBox() {
     const { channelId } = useParams();
+    const navigate = useNavigate();
     const { user, loading: userLoading, refetch } = useUser();
     const [channelData, setChannelData] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -24,6 +25,7 @@ function ChannelBox() {
 
     const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
     const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const MESSAGE_PREVIEW_LIMIT = 150; // Character limit for preview
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -40,7 +42,7 @@ function ChannelBox() {
     useEffect(() => {
         const fetchChannelData = async () => {
             try {
-                const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}`);
+                const response = await fetch(`http://localhost:3000/api/channels/${channelId}`);
                 const data = await response.json();
                 setChannelData(data);
             } catch (error) {
@@ -59,7 +61,7 @@ function ChannelBox() {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}/messages`);
+                const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages`);
                 const data = await response.json();
                 setMessages(data.messages || []);
             } catch (error) {
@@ -144,7 +146,7 @@ function ChannelBox() {
                 timestamp: new Date().toISOString()
             };
 
-            const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}/messages`, {
+            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -178,7 +180,7 @@ function ChannelBox() {
         if (!editText.trim()) return;
 
         try {
-            const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}/messages/${messageId}`, {
+            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages/${messageId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,7 +210,7 @@ function ChannelBox() {
         if (!confirm('Are you sure you want to delete this message?')) return;
 
         try {
-            const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}/messages/${messageId}`, {
+            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages/${messageId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -279,10 +281,29 @@ function ChannelBox() {
         setEditText('');
     };
 
-    // Render message content
+    // Navigate to full message view
+    const viewFullMessage = (messageId) => {
+        navigate(`/channels/${channelId}/messages/${messageId}`);
+    };
+
+    // Get message preview
+    const getMessagePreview = (text) => {
+        if (!text || text.length <= MESSAGE_PREVIEW_LIMIT) {
+            return text;
+        }
+        return text.substring(0, MESSAGE_PREVIEW_LIMIT).trim() + '...';
+    };
+
+    // Check if message needs "Read More"
+    const needsReadMore = (text) => {
+        return text && text.length > MESSAGE_PREVIEW_LIMIT;
+    };
+
+    // Render message content with preview functionality
     const renderMessageContent = (message) => {
         const isEditing = editingMessage === message._id;
         const isOwner = message.senderId === user?.id;
+        const showReadMore = needsReadMore(message.text);
 
         return (
             <div className="group relative">
@@ -364,11 +385,24 @@ function ChannelBox() {
                         <>
                             {message.text && (
                                 <div className="text-gray-800 mb-3 whitespace-pre-wrap break-words leading-relaxed">
-                                    {message.text}
+                                    {getMessagePreview(message.text)}
+                                    {showReadMore && (
+                                        <div className="mt-2">
+                                            <button
+                                                onClick={() => viewFullMessage(message._id)}
+                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center transition-colors"
+                                            >
+                                                Read More
+                                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* File attachments */}
+                            {/* File attachments preview */}
                             {message.fileUrl && (
                                 <div className="mt-3">
                                     {message.fileType === 'image' && (
@@ -376,40 +410,58 @@ function ChannelBox() {
                                             <img
                                                 src={message.fileUrl}
                                                 alt="Shared image"
-                                                className="max-w-full max-h-80 object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
-                                                onClick={() => window.open(message.fileUrl, '_blank')}
+                                                className="max-w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
+                                                onClick={() => viewFullMessage(message._id)}
                                             />
+                                            <div className="mt-2">
+                                                <button
+                                                    onClick={() => viewFullMessage(message._id)}
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center transition-colors"
+                                                >
+                                                    View Full Size
+                                                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
                                     {message.fileType === 'video' && (
                                         <div className="rounded-lg overflow-hidden">
-                                            <video
-                                                src={message.fileUrl}
-                                                controls
-                                                className="max-w-full max-h-80 rounded-lg"
-                                                preload="metadata"
-                                            >
-                                                Your browser does not support the video tag.
-                                            </video>
+                                            <div className="relative bg-gray-100 rounded-lg h-32 flex items-center justify-center cursor-pointer" 
+                                                onClick={() => viewFullMessage(message._id)}>
+                                                <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                                                </svg>
+                                            </div>
+                                            <div className="mt-2">
+                                                <button
+                                                    onClick={() => viewFullMessage(message._id)}
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center transition-colors"
+                                                >
+                                                    Watch Video
+                                                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
                                     {message.fileType === 'pdf' && (
-                                        <a
-                                            href={message.fileUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center px-4 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                                        <div 
+                                            onClick={() => viewFullMessage(message._id)}
+                                            className="inline-flex items-center px-4 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors border border-red-200 cursor-pointer"
                                         >
                                             <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                             </svg>
                                             <div>
                                                 <div className="font-medium">{message.fileName || 'PDF Document'}</div>
-                                                <div className="text-sm text-red-600">Click to open</div>
+                                                <div className="text-sm text-red-600">Click to view</div>
                                             </div>
-                                        </a>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -439,7 +491,7 @@ function ChannelBox() {
             <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 shadow-sm">
                 <div className="flex items-center">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-md">
-                        <img className=' w-full  rounded-full object-fit ' src={channelData?.avatar} alt="" />
+                        <img className='w-full rounded-full object-fit' src={channelData?.avatar} alt="" />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-gray-900">

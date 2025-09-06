@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../../Components/Navbar/Navbar";
 import DownNav from "../../Components/DownNav/DownNav";
 import { Link } from "react-router";
-import { ChevronDown, Menu, X, Clock, Globe, DollarSign, User, Star, Search, Filter, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Menu, X, Clock, Globe, DollarSign, User, Star, Search, Filter, SlidersHorizontal, Tag } from "lucide-react";
 
 function ELearning() {
   const [loading, setLoading] = useState(true);
@@ -59,7 +59,7 @@ function ELearning() {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const res = await fetch('https://api.flybook.com.bd/api/courses');
+        const res = await fetch('http://localhost:3000/api/courses');
         const data = await res.json();
         setCourses(data);
         setFilteredCourses(data);
@@ -74,48 +74,18 @@ function ELearning() {
     fetchCourses();
   }, []);
 
-  // Filter courses based on selected filters
+  // FIXED: Filter courses based on selected filters with exact category matching
   useEffect(() => {
     let filtered = [...courses];
 
-    // Category filter using navItems
+    // Category filter - EXACT MATCH ONLY
     if (selectedCategory !== 'All') {
-      // Find which nav category the selected category belongs to
-      const navCategory = navItems.find(nav =>
-        nav.items.some(item => item.toLowerCase() === selectedCategory.toLowerCase())
-      );
-
-      if (navCategory) {
-        // Filter courses based on matching nav category items
-        filtered = filtered.filter(course => {
-          const courseCategory = course.categories?.toLowerCase() || '';
-          const courseTitle = course.title?.toLowerCase() || '';
-
-          // Check if course category or title matches any item in the selected nav category
-          return navCategory.items.some(item =>
-            courseCategory.includes(item.toLowerCase()) ||
-            courseTitle.includes(item.toLowerCase()) ||
-            // Also check if the course category matches the main category title
-            courseCategory.includes(navCategory.title.toLowerCase()) ||
-            courseTitle.includes(navCategory.title.toLowerCase())
-          );
-        });
-      } else {
-        // If it's a main category (like "Class 1-12"), filter by nav title
-        const mainCategory = navItems.find(nav => nav.title === selectedCategory);
-        if (mainCategory) {
-          filtered = filtered.filter(course => {
-            const courseCategory = course.categories?.toLowerCase() || '';
-            const courseTitle = course.title?.toLowerCase() || '';
-
-            return mainCategory.items.some(item =>
-              courseCategory.includes(item.toLowerCase()) ||
-              courseTitle.includes(item.toLowerCase())
-            ) || courseCategory.includes(mainCategory.title.toLowerCase()) ||
-              courseTitle.includes(mainCategory.title.toLowerCase());
-          });
-        }
-      }
+      filtered = filtered.filter(course => {
+        const courseCategory = course.categories?.trim() || '';
+        
+        // Exact match for specific category selection
+        return courseCategory.toLowerCase() === selectedCategory.toLowerCase();
+      });
     }
 
     // Level filter
@@ -137,32 +107,26 @@ function ELearning() {
       filtered = filtered.filter(course =>
         course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructorName?.toLowerCase().includes(searchTerm.toLowerCase())
+        course.instructorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.categories?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     setFilteredCourses(filtered);
   }, [courses, selectedCategory, selectedLevel, priceFilter, searchTerm]);
 
-  // Get categories from navItems instead of courses
-  const getNavItemCategories = () => {
+  // Get all unique categories from courses (not from navItems)
+  const getUniqueCategories = () => {
     const categories = ['All'];
-
-    // Add main nav titles
-    navItems.forEach(nav => {
-      categories.push(nav.title);
+    const uniqueCategories = new Set();
+    
+    courses.forEach(course => {
+      if (course.categories && course.categories.trim()) {
+        uniqueCategories.add(course.categories.trim());
+      }
     });
-
-    // Add individual items from each nav category
-    navItems.forEach(nav => {
-      nav.items.forEach(item => {
-        if (!categories.includes(item)) {
-          categories.push(item);
-        }
-      });
-    });
-
-    return categories;
+    
+    return [...categories, ...Array.from(uniqueCategories).sort()];
   };
 
   // Get unique levels from courses
@@ -235,6 +199,7 @@ function ELearning() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -275,14 +240,6 @@ function ELearning() {
 
                   {activeDropdown === navItem.id && (
                     <div className="bg-gray-50 px-4 pb-4">
-                      {/* Main Category Filter Option */}
-                      <button
-                        onClick={() => handleNavCategoryClick(navItem)}
-                        className="block w-full text-left p-3 mb-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:bg-white rounded-lg transition-colors border border-blue-200"
-                      >
-                        All {navItem.title}
-                      </button>
-
                       <div className="grid grid-cols-2 gap-2">
                         {navItem.items.map((item, index) => (
                           <button
@@ -323,14 +280,6 @@ function ELearning() {
                   {activeDropdown === navItem.id && (
                     <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
                       <div className="max-h-80 overflow-y-auto">
-                        {/* Main Category Filter Option */}
-                        <button
-                          onClick={() => handleNavCategoryClick(navItem)}
-                          className="block w-full text-left px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors duration-150 text-sm font-semibold border-b border-gray-100 mb-1"
-                        >
-                          All {navItem.title}
-                        </button>
-
                         {navItem.items.map((item, index) => (
                           <button
                             key={index}
@@ -432,7 +381,7 @@ function ELearning() {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-base"
                   >
-                    {getNavItemCategories().map(category => (
+                    {getUniqueCategories().map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
@@ -514,7 +463,7 @@ function ELearning() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                {getNavItemCategories().map(category => (
+                {getUniqueCategories().map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
@@ -652,6 +601,14 @@ function ELearning() {
 
                 {/* Course Content */}
                 <div className="p-4 sm:p-6">
+                  {/* Course Category Badge - NEW */}
+                  <div className="mb-3">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      <Tag className="w-3 h-3 mr-1" />
+                      {course.categories}
+                    </span>
+                  </div>
+
                   <div className="mb-3 sm:mb-4">
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm sm:text-base">
                       {course.title}

@@ -30,7 +30,7 @@ function Channels() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('https://api.flybook.com.bd/api/channels')
+      const res = await fetch('http://localhost:3000/api/channels')
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`)
@@ -165,7 +165,7 @@ function Channels() {
     }
 
     try {
-      const res = await fetch('https://api.flybook.com.bd/api/channels', {
+      const res = await fetch('http://localhost:3000/api/channels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

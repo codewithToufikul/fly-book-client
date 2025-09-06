@@ -15,7 +15,7 @@ const MyAllActivies = () => {
     const { data: organizations, isLoading, isError, refetch } = useQuery({
         queryKey: ["organizations", orgId],
         queryFn: async () => {
-            const response = await fetch(`https://api.flybook.com.bd/api/v1/organizations/${orgId}`, {
+            const response = await fetch(`http://localhost:3000/api/v1/organizations/${orgId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!response.ok) throw new Error("Failed to retrieve organizations");

@@ -12,7 +12,7 @@ function ManageChannel() {
 
   const fetchChannels = async () => {
     try {
-      const response = await fetch('https://api.flybook.com.bd/api/channels/admin');
+      const response = await fetch('http://localhost:3000/api/channels/admin');
       const data = await response.json();
       console.log(data)
       setChannels(data);
@@ -25,7 +25,7 @@ function ManageChannel() {
 
   const updateChannelStatus = async (channelId, newStatus) => {
     try {
-      const response = await fetch(`https://api.flybook.com.bd/api/channels/${channelId}/status`, {
+      const response = await fetch(`http://localhost:3000/api/channels/${channelId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

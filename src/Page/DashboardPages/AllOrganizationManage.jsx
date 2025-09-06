@@ -5,7 +5,7 @@ const AllOrganizationManage = () => {
     queryKey: ["organizations"],
     queryFn: async () => {
       const response = await fetch(
-        "https://api.flybook.com.bd/api/v1/organizations"
+        "http://localhost:3000/api/v1/organizations"
       );
       const data = await response.json();
       return data;

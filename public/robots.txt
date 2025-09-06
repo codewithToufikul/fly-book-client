@@ -1,0 +1,25 @@
+User-agent: *
+# ❌ এই route গুলো search engine index করবে না
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api
+Disallow: /login
+Disallow: /register
+Disallow: /peoples
+Disallow: /my-libary
+Disallow: /nearby-books
+Disallow: /channels
+Disallow: /notifications
+Disallow: /profile
+
+# ✅ বাকিগুলো index হবে
+Allow: /
+Allow: /e-learning
+Allow: /audio-book
+Allow: /contact-us 
+Allow: /about-us 
+Allow: /privacy-policy
+
+
+# 🔗 আপনার sitemap link
+Sitemap: https://flybook.com.bd/sitemap.xml

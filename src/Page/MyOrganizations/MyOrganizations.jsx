@@ -13,7 +13,7 @@ const MyOrganizations = () => {
     useEffect(() => {
         const fetchOrganizations = async () => {
             try {
-                const response = await fetch(`https://api.flybook.com.bd/api/v1/organizations/user/${user?.id}`);
+                const response = await fetch(`http://localhost:3000/api/v1/organizations/user/${user?.id}`);
                 const result = await response.json();
                 if (result.success) {
                     setOrganizations(result.data);

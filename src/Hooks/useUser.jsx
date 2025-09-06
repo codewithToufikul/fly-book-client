@@ -1,74 +1,68 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const fetchUserProfile = async () => {
   const token = localStorage.getItem("token");
 
-  if (!token) {
-    return null; // No token found, return null
-  }
+  // ✅ Token na thakle, null return korbo — kono exception throw na
+  if (!token) return null;
 
-  try {
-    const response = await fetch("https://api.flybook.com.bd/profile", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const response = await fetch("http://localhost:3000/profile", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        throw new Error(errorData.error || "Invalid or expired token.");
-      }
-      throw new Error(errorData.error || "Failed to fetch user data.");
+  const data = await response.json();
+
+  // ✅ Invalid token, expired token er jonno 401 error
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(data.error || "Invalid or expired token.");
     }
-
-    return response.json();
-  } catch (error) {
-    throw new Error(error.message || "Network Error");
+    throw new Error(data.error || "Failed to fetch user data.");
   }
+
+  return data;
 };
 
 const useUser = () => {
-  const navigate = useNavigate(); // hook for navigation
+  const navigate = useNavigate();
 
-  const queryResult = useQuery({
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    status,
+  } = useQuery({
     queryKey: ["userProfile"],
     queryFn: fetchUserProfile,
-    onSuccess: (data) => {
-      console.log('User data fetched:', data);
-    },
-    onError: (error) => {
-      console.error('Error fetching user data:', error);
-      if (error.message === "Invalid or expired token.") {
-        // Redirect to login page on JWT error
-        navigate("/login");
-      }
-    },
-    // Optionally, set a staleTime to avoid repeated fetching
-    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: user, isLoading, isError, error, refetch } = queryResult;
-
-  // If there's an error or loading, return the relevant state
-  if (isError && error.message === "Invalid or expired token.") {
-    // In case of expired token, handle the redirect to login page
-    return {
-      user: null,
-      loading: false, // Stop loading state
-      isError: true,
-      error: error?.message,
-      refetch,
-    };
-  }
+  useEffect(() => {
+    // ✅ Only redirect if token exists but is invalid/expired
+    const token = localStorage.getItem("token");
+    if (
+      token &&
+      status === "error" &&
+      error?.message === "Invalid or expired token."
+    ) {
+      localStorage.removeItem("token");
+      navigate("/login");
+    }
+  }, [status, error, navigate]);
 
   return {
-    user: user || null, // Default to null if query fails or no data
+    user: user || null,          // Token na thakle null
     loading: isLoading,
     isError,
-    error: error?.message,
+    error: error?.message || null,
     refetch,
   };
 };

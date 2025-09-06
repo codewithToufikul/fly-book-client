@@ -97,8 +97,8 @@ const Home = () => {
 
         const url =
           activeCategory === "All"
-            ? "https://api.flybook.com.bd/all-home-books"
-            : `https://api.flybook.com.bd/all-home-books?category=${activeCategory}`;
+            ? "http://localhost:3000/all-home-books"
+            : `http://localhost:3000/all-home-books?category=${activeCategory}`;
 
         const res = await fetch(url);
         if (!res.ok) {
@@ -239,7 +239,7 @@ const Home = () => {
     const detectedLang = franc(content);
     console.log(targetLang, detectedLang);
     const targetLangCode = targetLang.split("_")[0];
-    // যদি ভাষা 'ben' হয়, তবে অনুবাদ করার প্রয়োজন নেই
+    // যদি ভাষা 'ben' হয়, তবে অনুবাদ করার প্রয়োজন নেই
     if (detectedLang === targetLangCode) {
       toast.info("The post is already in your language.");
       return;
@@ -473,6 +473,28 @@ const Home = () => {
   const handleUpcoming = () => {
     toast.error("🚀 Exciting new features coming soon!🎉");
   };
+
+  // Helper function to check if text needs truncation
+  const needsTruncation = (text, maxLength) => {
+    return text && text.length > maxLength;
+  };
+
+  // Helper function to get truncated text
+  const getTruncatedText = (text, maxLength) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  };
+
+    const handleShare = async (postId) => {
+    const postUrl = `http://localhost:3000/post-details/${postId}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast.success("Post Link Copied !")
+    } catch (err) {
+      console.log(err)
+    }
+  };
+
   return (
     <div>
       <Navbar />
@@ -576,193 +598,192 @@ const Home = () => {
                 </div>
               ) : (
                 <>
-                  {visiblePosts.map((post, index) => (
-                    <div
-                      key={post._id}
-                      ref={
-                        index === visiblePosts.length - 1
-                          ? lastPostElementRef
-                          : null
-                      }
-                      className="card bg-gray-50 shadow-sm border-b-4 border-b-blue-200 border-t-2 rounded-md"
-                    >
-                      <div className="card-body p-4">
-                        <h2 className="card-title text-xl lg:text-3xl">
-                          {post.title}
-                        </h2>
+                  {visiblePosts.map((post, index) => {
+                    const displayText = showTranslates[post._id] 
+                      ? translatedTexts[post._id] || "Translation loading..."
+                      : post.message;
+                    
+                    const mobileMaxLength = 100;
+                    const desktopMaxLength = 180;
+                    
+                    const needsMobileTruncation = needsTruncation(displayText, mobileMaxLength);
+                    const needsDesktopTruncation = needsTruncation(displayText, desktopMaxLength);
+                    
+                    return (
+                      <div
+                        key={post._id}
+                        ref={
+                          index === visiblePosts.length - 1
+                            ? lastPostElementRef
+                            : null
+                        }
+                        className="card bg-gray-50 shadow-sm border-b-4 border-b-blue-200 border-t-2 rounded-md"
+                      >
+                        <div className="card-body p-4">
+                          <h2 className="card-title text-xl lg:text-3xl">
+                            {post.title}
+                          </h2>
 
-                        <p
-                          className="text-sm lg:text-lg whitespace-pre-wrap"
-                          onClick={() => toggleExpand(post._id)}
-                        >
-                          {expandedPosts[post._id] ? (
-                            <div className="space-y-3">
-                              <Linkify
-                                componentDecorator={(
-                                  decoratedHref,
-                                  decoratedText,
-                                  key
-                                ) => (
-                                  <a
-                                    key={key}
-                                    href={decoratedHref}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    {decoratedText}
-                                  </a>
-                                )}
-                              >
-                                {showTranslates[post._id]
-                                  ? translatedTexts[post._id] ||
-                                  "Translation loading..."
-                                  : post.message}
-                              </Linkify>
+                          <div className="text-sm lg:text-lg whitespace-pre-wrap">
+                            {expandedPosts[post._id] ? (
+                              <div className="space-y-3">
+                                <Linkify
+                                  componentDecorator={(
+                                    decoratedHref,
+                                    decoratedText,
+                                    key
+                                  ) => (
+                                    <a
+                                      key={key}
+                                      href={decoratedHref}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {decoratedText}
+                                    </a>
+                                  )}
+                                >
+                                  {displayText}
+                                </Linkify>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="block sm:hidden">
+                                  <div className="space-y-3">
+                                    <Linkify
+                                      componentDecorator={(
+                                        decoratedHref,
+                                        decoratedText,
+                                        key
+                                      ) => (
+                                        <a
+                                          key={key}
+                                          href={decoratedHref}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                        >
+                                          {decoratedText}
+                                        </a>
+                                      )}
+                                    >
+                                      {getTruncatedText(displayText, mobileMaxLength)}
+                                    </Linkify>
+                                  </div>
+                                </span>
+                                <span className="hidden sm:block">
+                                  <div className="space-y-3">
+                                    <Linkify
+                                      componentDecorator={(
+                                        decoratedHref,
+                                        decoratedText,
+                                        key
+                                      ) => (
+                                        <a
+                                          key={key}
+                                          href={decoratedHref}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                        >
+                                          {decoratedText}
+                                        </a>
+                                      )}
+                                    >
+                                      {getTruncatedText(displayText, desktopMaxLength)}
+                                    </Linkify>
+                                  </div>
+                                </span>
+                              </>
+                            )}
+                          </div>
 
-                            </div>
-                          ) : (
-                            <>
-                              <span className="block sm:hidden">
-                                <div className="space-y-3">
-                                  <Linkify
-                                    componentDecorator={(
-                                      decoratedHref,
-                                      decoratedText,
-                                      key
-                                    ) => (
-                                      <a
-                                        key={key}
-                                        href={decoratedHref}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline"
-                                      >
-                                        {decoratedText}
-                                      </a>
-                                    )}
-                                  >
-                                    {showTranslates[post._id]
-                                      ? translatedTexts[post._id]
-                                        ? translatedTexts[post._id].slice(
-                                          0,
-                                          100
-                                        ) + "..."
-                                        : "Translation loading..."
-                                      : post.message.slice(0, 100) + "..."}
-                                  </Linkify>
-                                </div>
-                              </span>
-                              <span className="hidden sm:block">
-                                <div className="space-y-3">
-                                  <Linkify
-                                    componentDecorator={(
-                                      decoratedHref,
-                                      decoratedText,
-                                      key
-                                    ) => (
-                                      <a
-                                        key={key}
-                                        href={decoratedHref}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline"
-                                      >
-                                        {decoratedText}
-                                      </a>
-                                    )}
-                                  >
-                                    {showTranslates[post._id]
-                                      ? translatedTexts[post._id]
-                                        ? translatedTexts[post._id].slice(
-                                          0,
-                                          180
-                                        ) + "..."
-                                        : "Translation loading..."
-                                      : post.message.slice(0, 180) + "..."}
-                                  </Linkify>
-                                </div>
-                              </span>
-                            </>
-                          )}
-                        </p>
-                        <button
-                          onClick={() =>
-                            handleTranslate(post._id, post.message)
-                          }
-                          className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 transition-colors"
-                          disabled={tLoadings[post._id]}
-                        >
-                          {tLoadings[post._id] ? (
-                            <span className="loading loading-spinner loading-xs"></span>
-                          ) : (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                          <Link
+                            to={`/post-details/${post._id}`}
+                              className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-2 transition-colors"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                              />
-                            </svg>
-                          )}
-                          {showTranslates[post._id]
-                            ? "Show Original"
-                            : "Translate"}
-                        </button>
-                      </div>
-                      <figure className="w-full">
-                        <img
-                          className="h-[200px] lg:h-[300px] w-full"
-                          src={post.image}
-                          alt={post.title}
-                        />
-                      </figure>
-                      <div className="p-5 flex justify-between items-center">
-                        <div className="flex items-center gap-1">
-                          {user && post.likedBy?.includes(user.id) ? (
-                            likingPosts[post._id] ? (
+                              Read More
+                            </Link>
+
+                          <button
+                            onClick={() =>
+                              handleTranslate(post._id, post.message)
+                            }
+                            className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 transition-colors mt-3"
+                            disabled={tLoadings[post._id]}
+                          >
+                            {tLoadings[post._id] ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                                />
+                              </svg>
+                            )}
+                            {showTranslates[post._id]
+                              ? "Show Original"
+                              : "Translate"}
+                          </button>
+                        </div>
+                        <figure className="w-full">
+                          <img
+                            className="h-[200px] lg:h-[300px] w-full"
+                            src={post.image}
+                            alt={post.title}
+                          />
+                        </figure>
+                        <div className="p-5 flex justify-between items-center">
+                          <div className="flex items-center gap-1">
+                            {user && post.likedBy?.includes(user.id) ? (
+                              likingPosts[post._id] ? (
+                                <span className="loading loading-spinner loading-md mr-2"></span>
+                              ) : (
+                                <img
+                                  onClick={() => handleUnlike(post._id)}
+                                  className="w-8 lg:w-10 mr-2 cursor-pointer"
+                                  src={heartfill}
+                                  alt=""
+                                />
+                              )
+                            ) : likingPosts[post._id] ? (
                               <span className="loading loading-spinner loading-md mr-2"></span>
                             ) : (
-                              <img
-                                onClick={() => handleUnlike(post._id)}
-                                className="w-8 lg:w-10 mr-2 cursor-pointer"
-                                src={heartfill}
-                                alt=""
-                              />
-                            )
-                          ) : likingPosts[post._id] ? (
-                            <span className="loading loading-spinner loading-md mr-2"></span>
-                          ) : (
-                            <h1
-                              onClick={() => handlePostLike(post._id)}
-                              className="cursor-pointer text-[32px] mr-2"
-                            >
-                              <FaRegHeart />
-                            </h1>
-                          )}
+                              <h1
+                                onClick={() => handlePostLike(post._id)}
+                                className="cursor-pointer text-[32px] mr-2"
+                              >
+                                <FaRegHeart />
+                              </h1>
+                            )}
 
-                          <p className=" text-sm lg:text-lg font-medium">
-                            {post.likes} Likes
-                          </p>
-                        </div>
-                        <div
-                          onClick={handleUpcoming}
-                          className="flex items-center gap-1 cursor-pointer"
-                        >
-                          <img className=" w-7" src={send} alt="" />
-                          <p className=" text-sm lg:text-lg font-medium">
-                            Share
-                          </p>
+                            <p className=" text-sm lg:text-lg font-medium">
+                              {post.likes} Likes
+                            </p>
+                          </div>
+                          <div
+                            onClick={()=>handleShare(post._id)}
+                            className="flex items-center gap-1 cursor-pointer"
+                          >
+                            <img className=" w-7" src={send} alt="" />
+                            <p className=" text-sm lg:text-lg font-medium">
+                              Share
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {loading && (
                     <div className="flex justify-center p-4">

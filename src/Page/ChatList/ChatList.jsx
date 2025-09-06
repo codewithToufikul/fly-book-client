@@ -66,7 +66,7 @@ const ChatList = () => {
     try {
       const response = await axiosPublic({
         method: 'DELETE',
-        url: `https://api.flybook.com.bd/api/delete-conversation/${selectedChat._id}`,
+        url: `http://localhost:3000/api/delete-conversation/${selectedChat._id}`,
         headers: {
           Authorization: `Bearer ${token}`
         }

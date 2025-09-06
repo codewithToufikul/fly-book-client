@@ -124,7 +124,7 @@ const PdfAdd = () => {
         fileSize: metadata.fileSize || 0,
       };
 
-      const response = await fetch("https://api.flybook.com.bd/upload", {
+      const response = await fetch("http://localhost:3000/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookData),

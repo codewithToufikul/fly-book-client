@@ -37,6 +37,7 @@ const Register = () => {
     setLoading(true);
 
     if (!userLocation || userLocation == null) {
+      console.log("no locatiion")
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -89,7 +90,7 @@ const Register = () => {
     };
 
     try {
-      const res = await axios.post("https://api.flybook.com.bd/users/register", userInfo);
+      const res = await axios.post("http://localhost:3000/users/register", userInfo);
 
       if (res.data.success) {
         toast.success("Registered successfully!");

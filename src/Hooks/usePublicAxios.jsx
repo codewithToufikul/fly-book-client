@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosPublic = axios.create({
-  baseURL: "https://api.flybook.com.bd", // Base URL for your API
+  baseURL: "http://localhost:3000", // Base URL for your API
 });
 
 // Add a request interceptor to include the token

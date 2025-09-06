@@ -11,6 +11,7 @@ import {
   HiHome,
   HiOutlineMenu,
   HiUserAdd,
+  HiX,
 } from "react-icons/hi";
 import { IoNotificationsSharp } from "react-icons/io5";
 import { MdPictureAsPdf, MdUploadFile } from "react-icons/md";
@@ -26,18 +27,24 @@ import audioBook from "../../assets/audio-book.png";
 import donetBook from "../../assets/book.png";
 import breach from "../../assets/cyber-attack.png";
 import settings from "../../assets/setting.png";
+import near from "../../assets/near.png"
 import help from "../../assets/customer-service.png";
 import logout from "../../assets/logout.png";
 import { Link, NavLink, useNavigate } from "react-router";
 import useUser from "../../Hooks/useUser";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
+
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import { IoIosSearch } from "react-icons/io";
 import { BsFillChatSquareTextFill } from "react-icons/bs";
 import { io } from "socket.io-client";
 import logoWp from "../../assets/load.webp";
 import { FcOrganization } from "react-icons/fc";
+import about from "../../assets/information.png";
+import disclaimer from "../../assets/disclaimer.png";
+import pricacy from "../../assets/protection.png";
+import terms from "../../assets/terms-and-conditions.png";
 
 const Navbar = () => {
   const { user, loading, refetch } = useUser();
@@ -91,7 +98,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io("https://api.flybook.com.bd", {
+    const newSocket = io("https://flybook.com.bd", {
       transports: ["websocket"], // Use WebSocket transport directly
       withCredentials: true, // If your server requires credentials for CORS
     });
@@ -135,13 +142,27 @@ const Navbar = () => {
     };
   }, [socket]);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://api.flybook.com.bd/search?q=${encodeURIComponent(searchQuery)}`
+        `https://flybook.com.bd/search?q=${encodeURIComponent(searchQuery)}`
       );
       if (!response.ok) {
         const errorMessage = await response.text();
@@ -163,20 +184,22 @@ const Navbar = () => {
       toast.error("Please login first to make a post!");
       return;
     }
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current &&
+      if (
+        dropdownRef.current &&
         !dropdownRef.current.contains(e.target) &&
-        !buttonRef.current.contains(e.target)) {
+        !buttonRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
   const handleImageChange = (event) => {
@@ -336,31 +359,21 @@ const Navbar = () => {
 
   const handleUpcoming = () => {
     toast.error("Features Upcoming !");
+    setIsMobileMenuOpen(false);
   };
 
   const toggleMobileMenu = (e) => {
     e.stopPropagation();
-    setIsMobileMenuOpen(prev => !prev);
+    setIsMobileMenuOpen((prev) => !prev);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      const mobileMenu = document.querySelector('#mobile-menu');
-      const menuButton = document.querySelector('#mobile-menu-button');
-
-      if (mobileMenu &&
-        !mobileMenu.contains(e.target) &&
-        !menuButton.contains(e.target)) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div className={` bg-none md:bg-gray-50  sticky top-0 z-50 `}>
+      {/* Mobile Header */}
       <div className=" bg-gray-50 py-3 pl-3 pr-3 lg:p-0 lg:hidden flex justify-between items-center relative">
         <div className="">
           <a href="/">
@@ -403,162 +416,268 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
       <div
-        className={`navbar bg-gray-50  p-0 transition-transform duration-300 border-b-2  ${window.innerWidth <= 768 ? (showNav ? "" : "opacity-0 ") : ""
-          }`}
+        className={`lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
+          isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+        onClick={closeMobileMenu}
+      />
+
+      {/* Mobile Sliding Menu */}
+      <div
+        className={`lg:hidden fixed top-0 left-0 h-full w-80 bg-white z-50 transform transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } shadow-xl overflow-y-auto`}
+      >
+        {/* Menu Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-xl font-semibold text-gray-800">Menu</h2>
+          <button
+            onClick={closeMobileMenu}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <HiX className="text-2xl text-gray-600" />
+          </button>
+        </div>
+
+        {/* Menu Items */}
+        <div className="p-4 mb-8">
+          <ul className="space-y-2">
+            <li>
+              <Link
+                to={"/peoples"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={fnds} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Friends</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/my-library"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={library} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Library</h2>
+              </Link>
+            </li>
+            <li>
+              <div
+                onClick={handleUpcoming}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={group} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Groups</h2>
+              </div>
+            </li>
+            <li>
+              <Link
+                to={"https://bookoffen.com/"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={market} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Market Place</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/e-learning"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={elng} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">E-Learning</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/channels"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={channel} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Channels</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/nearby-books"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={near} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Nearby Book</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/audio-book"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={audioBook} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Audio Book</h2>
+              </Link>
+            </li>
+            <li>
+              <div
+                onClick={handleUpcoming}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={donetBook} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Donate Your Book</h2>
+              </div>
+            </li>
+            <li>
+              <Link
+                to={"/organizations"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <p className="text-xl">
+                  <FcOrganization />
+                </p>
+                <h2 className="text-sm font-medium">Unlocking your potential with-</h2>
+              </Link>
+            </li>
+            <li>
+              <div
+                onClick={handleUpcoming}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={breach} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Breach of Contract</h2>
+              </div>
+            </li>
+            <li>
+              <div
+                onClick={handleUpcoming}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={settings} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Settings</h2>
+              </div>
+            </li>
+            <li>
+              <Link
+                to={"/contact-us"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={help} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Contact Us</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/about-us"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={about} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">About Us</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/privacy-policy"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={pricacy} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Privacy Policy</h2>
+              </Link>
+            </li>
+            <li>
+              <div
+                onClick={handleUpcoming}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={disclaimer} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Disclaimer</h2>
+              </div>
+            </li>
+            <li>
+              <Link
+                to={"/terms-conditions"}
+                onClick={closeMobileMenu}
+                className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors"
+              >
+                <div className="w-6">
+                  <img className="w-full" src={terms} alt="" />
+                </div>
+                <h2 className="text-sm font-medium">Terms and Conditions</h2>
+              </Link>
+            </li>
+            {user && (
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 hover:bg-gray-100 w-full rounded-lg px-3 py-3 cursor-pointer transition-colors text-left"
+                >
+                  <div className="w-6">
+                    <img className="w-full" src={logout} alt="Logout" />
+                  </div>
+                  <h2 className="text-sm font-medium text-red-600">Log Out</h2>
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+
+      {/* Main Navbar */}
+      <div
+        className={`navbar bg-gray-50  p-0 transition-transform duration-300 border-b-2  ${
+          window.innerWidth <= 768 ? (showNav ? "" : "opacity-0 ") : ""
+        }`}
       >
         <div className="w-full lg:navbar-start">
           <ul
             className={`flex w-full flex-row mr-3 z-10 justify-between items-center lg:hidden `}
           >
             <li>
-              <div className="dropdown">
-                <div
-                  id="mobile-menu-button"
-                  tabIndex={0}
-                  role="button"
-                  onClick={toggleMobileMenu}
-                  className="btn btn-ghost px-0 pl-4 m-0"
-                >
-                  <h2 className="text-[32px]">
-                    <HiOutlineMenu />
-                  </h2>
-                </div>
-                <ul
-                  id="mobile-menu"
-                  className={`menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-60 p-2 shadow ${isMobileMenuOpen ? 'block' : 'hidden'
-                    }`}
-                >
-                  <li>
-                    <Link
-                      to={"/peoples"}
-
-                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
-                    >
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={fnds} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Friends</h2>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to={"/my-library"}
-
-                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
-                    >
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={library} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Library</h2>
-                    </Link>
-                  </li>
-                  <li onClick={handleUpcoming}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={group} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Groups</h2>
-                    </div>
-                  </li>
-                  <li>
-                    <Link
-                      to={"https://bookoffen.com/"}
-
-                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
-                    >
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={market} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Market Place</h2>
-                    </Link>
-                  </li>
-                  <Link to={'/e-learning'}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={elng} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">E-Learning</h2>
-                    </div>
-                  </Link>
-                  <Link to={'/channers'}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={channel} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Channels</h2>
-                    </div>
-                  </Link>
-                  <Link to={'/audio-book'}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={audioBook} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Audio Book</h2>
-                    </div>
-                  </Link>
-                  <li onClick={handleUpcoming}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={donetBook} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Donate Your Book</h2>
-                    </div>
-                  </li>
-                  <li>
-                    <Link
-                      to={"/organizations"}
-                      className=" flex items-center gap-3 hover:bg-gray-200 hover:shadow-md rounded-md cursor-pointer"
-                    >
-                      <p className=" text-xl"><FcOrganization /></p>
-                      <h2 className=" text-sm">Unlocking your potential with-</h2>
-                    </Link>
-                  </li>
-                  <li onClick={handleUpcoming}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={breach} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">
-                        Breach of Contract
-                      </h2>
-                    </div>
-                  </li>
-                  <li onClick={handleUpcoming}>
-                    <div className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer">
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={settings} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Settings</h2>
-                    </div>
-                  </li>
-                  <li>
-                    <Link
-                      to={"/contact-us"}
-
-                      className=" flex items-center gap-2 hover:bg-gray-200 w-full hover:shadow-md rounded-md px-2 py-2 cursor-pointer"
-                    >
-                      <div className=" w-6 ">
-                        <img className=" w-full" src={help} alt="" />
-                      </div>
-                      <h2 className=" text-sm font-normal">Contact Us</h2>
-                    </Link>
-                  </li>
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left hover:bg-gray-200 rounded-md"
-                    >
-                      <div className="flex items-center gap-2 w-full px-2 py-2 cursor-pointer">
-                        <div className="w-6">
-                          <img className="w-full" src={logout} alt="Logout" />
-                        </div>
-                        <h2 className="text-sm font-normal">Log Out</h2>
-                      </div>
-                    </button>
-                  </li>
-                </ul>
-              </div>
+              <button
+                onClick={toggleMobileMenu}
+                className="btn btn-ghost px-0 pl-4 m-0"
+              >
+                <HiOutlineMenu className="text-[32px]" />
+              </button>
             </li>
             <li className=" ">
               <details className="dropdown w-full">
@@ -597,7 +716,7 @@ const Navbar = () => {
                 <FaShop />
               </a>
             </li>
-            <Link to={'/e-learning'}>
+            <Link to={"/e-learning"}>
               <a className=" text-3xl lg:text-4xl">
                 <FaUserGraduate />
               </a>
@@ -660,8 +779,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 to={"/"}
               >
@@ -674,8 +793,8 @@ const Navbar = () => {
                   isActive
                     ? " text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 to={"/peoples"}
               >
@@ -686,10 +805,18 @@ const Navbar = () => {
               <div
                 ref={buttonRef}
                 onClick={toggleDropdown}
-                className={isOpen ? "font-bold text-4xl bg-gray-200 shadow-lg" : "font-bold text-4xl"}
+                className={
+                  isOpen
+                    ? "font-bold text-4xl bg-gray-200 shadow-lg"
+                    : "font-bold text-4xl"
+                }
               >
                 <div>
-                  <p className={`${isOpen ? "rotate-45" : "rotate-0"} transition-all`}>
+                  <p
+                    className={`${
+                      isOpen ? "rotate-45" : "rotate-0"
+                    } transition-all`}
+                  >
                     <FaPlusCircle />
                   </p>
                 </div>
@@ -698,7 +825,9 @@ const Navbar = () => {
             {/* Dropdown menu */}
             <div
               ref={dropdownRef}
-              className={`z-50 ${isOpen ? 'block' : 'hidden'} bg-gray-100 fixed  rounded-lg shadow mt-14 w-[500px] p-5`}
+              className={`z-50 ${
+                isOpen ? "block" : "hidden"
+              } bg-gray-100 fixed  rounded-lg shadow mt-14 w-[500px] p-5`}
             >
               <div className="text-xl font-medium">
                 <h1 className="text-3xl mb-5 text-center border-b-2 pb-2">
@@ -786,8 +915,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 to={"/public-opinion"}
               >
@@ -800,8 +929,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 to="/notifications"
               >
@@ -814,13 +943,13 @@ const Navbar = () => {
           <ul className="flex flex-row gap-8 justify-end py-2 px-3 rounded-lg mr-5 items-center">
             <li className=" ml-[-10px]">
               <NavLink
-                to={"https://bookoffen.com/"}
+              to={"/marketplace"}
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="Market"
@@ -828,15 +957,15 @@ const Navbar = () => {
                 <FaShop />
               </NavLink>
             </li>
-            <li className=" " >
+            <li className=" ">
               <NavLink
-                to={'/e-learning'}
+                to={"/e-learning"}
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="E-Learning"
@@ -851,8 +980,8 @@ const Navbar = () => {
                   isActive
                     ? "bg-gray-300 text-4xl"
                     : isPending
-                      ? "pending"
-                      : "font-bold text-4xl"
+                    ? "pending"
+                    : "font-bold text-4xl"
                 }
                 data-tooltip-id="my-tooltip"
                 data-tooltip-content="PDF Book"

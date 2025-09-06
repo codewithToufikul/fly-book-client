@@ -13,7 +13,7 @@ const ActivityDetails = () => {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const response = await fetch(`https://api.flybook.com.bd/api/v1/activity/${id}`);
+        const response = await fetch(`http://localhost:3000/api/v1/activity/${id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch activity");
         }

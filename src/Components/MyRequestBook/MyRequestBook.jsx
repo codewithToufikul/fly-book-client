@@ -13,7 +13,7 @@ const MyRequestBook = () => {
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
   const [reLoad, setReLoad] = useState(false);
-  const socket = io("https://api.flybook.com.bd");
+  const socket = io("https://flybook.com.bd");
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">

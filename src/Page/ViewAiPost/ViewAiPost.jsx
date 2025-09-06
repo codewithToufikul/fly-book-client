@@ -9,7 +9,7 @@ const ViewAiPost = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["aiPostData"],
     queryFn: () =>
-      fetch(`https://api.flybook.com.bd/admin/post-ai/${id}`).then((res) => res.json()),
+      fetch(`http://localhost:3000/admin/post-ai/${id}`).then((res) => res.json()),
   });
 
   const componentDecorator = (href, text, key) => (

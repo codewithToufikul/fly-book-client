@@ -10,7 +10,7 @@ const AdminManageOrg = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
-      const response = await fetch('https://api.flybook.com.bd/api/v1/organizations');
+      const response = await fetch('http://localhost:3000/api/v1/organizations');
       const data = await response.json();
       return data;
     },
@@ -31,7 +31,7 @@ const AdminManageOrg = () => {
 
     try {
       const response = await fetch(
-        `https://api.flybook.com.bd/api/v1/organizations/${orgIdToUpdate}/approve`,
+        `http://localhost:3000/api/v1/organizations/${orgIdToUpdate}/approve`,
         {
           method: "PATCH",
           headers: {

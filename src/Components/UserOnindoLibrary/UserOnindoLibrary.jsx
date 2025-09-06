@@ -11,7 +11,7 @@ const UserOnindoLibrary = () => {
   const {user, loading} = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
-  const socket = io("https://api.flybook.com.bd");
+  const socket = io("https://flybook.com.bd");
   const { allOnindoBooks, refetch, isLoading } = useAllOnindoBook();
   if (isLoading || loading) {
     return (

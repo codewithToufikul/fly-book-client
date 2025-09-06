@@ -23,7 +23,7 @@ const ResetPassword = () => {
     try {
       // Send password reset request
       const res = await axios.post(
-        `https://api.flybook.com.bd/reset-password/${id}/${token}`,
+        `http://localhost:3000/reset-password/${id}/${token}`,
         { password }
       );
       setLoading(false);

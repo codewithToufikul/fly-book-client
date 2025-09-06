@@ -13,7 +13,7 @@ const useAllPdfBook = () => {
   } = useQuery({
     queryKey: ["pdfBooks"],
     queryFn: async () => {
-      const res = await axios.get("https://api.flybook.com.bd/pdf-books", {
+      const res = await axios.get("http://localhost:3000/pdf-books", {
       });
       return res.data;
     },

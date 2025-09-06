@@ -23,7 +23,7 @@ const Login = () => {
     const password = formData.get("password");
 
     try {
-      const { data } = await axios.post("https://api.flybook.com.bd/users/login", {
+      const { data } = await axios.post("http://localhost:3000/users/login", {
         number,
         password,
       });

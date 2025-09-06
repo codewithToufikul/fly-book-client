@@ -6,7 +6,7 @@ const FreeAi = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("https://api.flybook.com.bd/admin/post-ai").then((res) => res.json()),
+      fetch("http://localhost:3000/admin/post-ai").then((res) => res.json()),
   });
 
   if (isLoading) {
