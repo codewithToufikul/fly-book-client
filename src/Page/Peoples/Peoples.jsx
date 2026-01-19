@@ -11,7 +11,8 @@ import useUser from "../../Hooks/useUser";
 import useAllFriends from "../../Hooks/useAllFriends";
 import Swal from "sweetalert2";
 import { Link } from "react-router";
-import { io, Socket } from "socket.io-client";
+
+import { useSocket } from "../../contexts/SocketContext";
 
 const Peoples = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -21,8 +22,32 @@ const Peoples = () => {
   const { peoples, isLoading } = usePeople();
   const [reqFriends, setReqFriend] = useState([]);
   const [sendReq, setSendReq] = useState([]);
+  const socket = useSocket(); // Use global socket
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
   const token = localStorage.getItem("token");
-  const socket = io("https://api.flybook.com.bd");
+
+  // Listen for user online/offline status using global socket
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for user online/offline status
+    socket.on("userOnline", (data) => {
+      setOnlineUsers(prev => new Set([...prev, data.userId]));
+    });
+
+    socket.on("userOffline", (data) => {
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(data.userId);
+        return newSet;
+      });
+    });
+
+    return () => {
+      socket.off("userOnline");
+      socket.off("userOffline");
+    };
+  }, [socket]);
 
 
   const fetchRequests = async () => {
@@ -66,15 +91,17 @@ const Peoples = () => {
       );
       toast.success("request sent !");
       fetchSendRequests();
-      socket.emit("sendRequest", {
-        senderId: user.id,
-        senderName: user.name,
-        senderProfile: user.profileImage,
-        receoientId: recipientId,
-        type: "fndReq",
-        notifyText: "Send Friend Request",
-        roomId: [recipientId],
-      });
+      if (socket) {
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: recipientId,
+          type: "fndReq",
+          notifyText: "Send Friend Request",
+          roomId: [recipientId],
+        });
+      }
       refetch();
     } catch (error) {
       console.log(error);
@@ -91,15 +118,17 @@ const Peoples = () => {
       );
       toast.success("Request Accepted !");
       fetchRequests();
-      socket.emit("sendRequest", {
-        senderId: user.id,
-        senderName: user.name,
-        senderProfile: user.profileImage,
-        receoientId: recipientId,
-        type: "fndReq",
-        notifyText: "Friend Request Accept",
-        roomId: [recipientId],
-      });
+      if (socket) {
+        socket.emit("sendRequest", {
+          senderId: user.id,
+          senderName: user.name,
+          senderProfile: user.profileImage,
+          receoientId: recipientId,
+          type: "fndReq",
+          notifyText: "Friend Request Accept",
+          roomId: [recipientId],
+        });
+      }
       refetch();
     } catch (error) {
       console.log(error);
@@ -331,12 +360,17 @@ const Peoples = () => {
                     className="lg:w-[210px] lg:h-[280px] w-full h-[120px] bg-white shadow-sm rounded-lg flex flex-row lg:flex-col items-center"
                     key={reqFriend._id}
                   >
-                    <div className="w-[160px] lg:w-[210px] h-full lg:h-[170px]">
+                    <div className="relative w-[160px] lg:w-[210px] h-full lg:h-[170px]">
                       <img
                         className="w-full h-full lg:h-[170px] rounded-l-2xl lg:rounded-l-none lg:rounded-t-2xl object-cover"
                         src={reqFriend.profileImage}
                         alt={reqFriend.name}
                       />
+                      {onlineUsers.has(reqFriend._id) || reqFriend.isOnline ? (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      ) : (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
                     <div className=" w-full pl-3 lg:pl-0 px-1 flex flex-col lg: gap-3 justify-between pb-3">
                       <Link  to={`/profile/${reqFriend._id}`}  className=" cursor-pointer text-xl lg:text-[22px] font-medium lg:font-semibold text-center py-2">
@@ -373,12 +407,17 @@ const Peoples = () => {
                     className="lg:w-[210px] lg:h-[280px] w-full h-[120px] bg-white shadow-sm rounded-lg flex flex-row lg:flex-col items-center"
                     key={people._id}
                   >
-                    <div className="w-[160px] lg:w-[210px] h-full lg:h-[170px]">
+                    <div className="relative w-[160px] lg:w-[210px] h-full lg:h-[170px]">
                       <img
                         className="w-full h-full lg:h-[170px] rounded-l-2xl lg:rounded-l-none lg:rounded-t-2xl object-cover"
                         src={people.profileImage}
                         alt={people.name}
                       />
+                      {onlineUsers.has(people._id) || people.isOnline ? (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      ) : (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
                     <div className=" w-full pl-3 lg:pl-0 px-1 flex flex-col lg: gap-3 justify-between pb-3">
                       <Link  to={`/profile/${people._id}`}  className=" cursor-pointer text-xl lg:text-[22px] font-medium lg:font-semibold text-center py-2">
@@ -407,12 +446,17 @@ const Peoples = () => {
                     className="lg:w-[210px] lg:h-[280px] w-full h-[120px] bg-white shadow-sm rounded-lg flex flex-row lg:flex-col items-center"
                     key={Friend._id}
                   >
-                    <div className="w-[160px] lg:w-[210px] h-full lg:h-[170px]">
+                    <div className="relative w-[160px] lg:w-[210px] h-full lg:h-[170px]">
                       <img
                         className="w-full h-full lg:h-[170px] rounded-l-2xl lg:rounded-l-none lg:rounded-t-2xl object-cover"
                         src={Friend.profileImage}
                         alt={Friend.name}
                       />
+                      {onlineUsers.has(Friend._id) || Friend.isOnline ? (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      ) : (
+                        <div className="absolute bottom-2 right-2 lg:bottom-2 lg:right-2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
                     <div className=" w-full pl-3 lg:pl-0 px-1 flex flex-col lg: gap-3 justify-between pb-3">
                       <Link  to={`/profile/${Friend._id}`}  className=" cursor-pointer text-xl lg:text-[22px] font-medium lg:font-semibold text-center py-2">

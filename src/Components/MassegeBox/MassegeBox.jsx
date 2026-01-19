@@ -6,7 +6,7 @@ import useUser from "../../Hooks/useUser";
 import { LuSend } from "react-icons/lu";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { useSocket } from "../../contexts/SocketContext";
 import { Link, useParams } from "react-router";
 import imageCompression from "browser-image-compression";
 import axios from "axios";
@@ -27,8 +27,8 @@ const MassegeBox = () => {
   const [userW, setUserW] = useState(null);
   const [isUserFound, setIsUserFound] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isUserOnline, setIsUserOnline] = useState(false);
   const axiosPublic = usePublicAxios();
   const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -50,42 +50,38 @@ const MassegeBox = () => {
       if (foundUser) {
         setUserW(foundUser);
         setIsUserFound(true);
+        // Set initial online status
+        setIsUserOnline(foundUser.isOnline || false);
       }
     }
   }, [peoples, userId]);
 
+  const socket = useSocket(); // Use global socket
+
   useEffect(() => {
-    // Initialize the Socket.IO connection
-    const newSocket = io("https://flybook.com.bd", {
-      transports: ["websocket"], // Use WebSocket transport directly
-      withCredentials: true, // If your server requires credentials for CORS
-    });
-    setSocket(newSocket);
-
-    // Log connection success
-    newSocket.on("connect", () => { });
-
-    // Handle errors during connection
-    newSocket.on("connect_error", (error) => {
-      console.error("Socket Connection Error:", error.message);
-    });
-
-    // Handle reconnection attempts
-    newSocket.on("reconnect_attempt", (attempt) => {
-      console.warn("Socket Reconnection Attempt:", attempt);
-    });
+    if (!socket) return;
 
     // Handle specific user logic
-    if (userId) {
-      const roomId = [userId, myData?.id].join("-");
-
-      newSocket.emit("joinRoom", roomId);
-
-      newSocket.on("connected", () => { });
+    if (userId && myData?.id) {
+      const roomId = [userId, myData.id].join("-");
+      socket.emit("joinRoom", roomId);
     }
 
+    // Listen for user online/offline status
+    socket.on("userOnline", (data) => {
+      if (data.userId === userId) {
+        setIsUserOnline(true);
+      }
+    });
+
+    socket.on("userOffline", (data) => {
+      if (data.userId === userId) {
+        setIsUserOnline(false);
+      }
+    });
+
     // Listen for incoming messages
-    newSocket.on("receiveMessage", (message) => {
+    socket.on("receiveMessage", (message) => {
       setMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -100,10 +96,11 @@ const MassegeBox = () => {
 
     // Cleanup on unmount
     return () => {
-      console.log("Disconnecting Socket...");
-      newSocket.disconnect();
+      socket.off("userOnline");
+      socket.off("userOffline");
+      socket.off("receiveMessage");
     };
-  }, [userId, myData?.id]);
+  }, [socket, userId, myData?.id]);
 
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["messageData", userW?._id],
@@ -113,6 +110,22 @@ const MassegeBox = () => {
       return res.data.messages;
     },
     enabled: !!userW,
+    onSuccess: async (messages) => {
+      // Mark messages as read when specific chat is opened
+      if (messages && messages.length > 0 && myData?.id && userW?._id) {
+        try {
+          await axiosPublic.put("/api/messages/mark-read", {
+            userId: myData.id,
+            senderId: userW._id,
+          });
+          
+          // Update message count in Navbar and DownNav
+          window.dispatchEvent(new CustomEvent('resetMessageCount'));
+        } catch (error) {
+          console.error("Error marking messages as read:", error);
+        }
+      }
+    },
     onError: (error) => {
       console.error("Error fetching messages:", error);
       toast.error("Failed to load messages.");
@@ -126,10 +139,12 @@ const MassegeBox = () => {
   }, [data]);
 
   const handleTyping = () => {
-    socket.emit("typing", {
-      senderId: myData.id,
-      roomId: [myData.id, userId].join("-"),
-    });
+    if (socket) {
+      socket.emit("typing", {
+        senderId: myData.id,
+        roomId: [myData.id, userId].join("-"),
+      });
+    }
   };
 
   const handleImageUpload = async (file) => {
@@ -203,15 +218,17 @@ const MassegeBox = () => {
 
     if (!messageText && !mediaUrl) return;
 
-    socket.emit("sendMessage", {
-      senderId: myData.id,
-      senderName: myData.name,
-      receoientId: userId,
-      messageText,
-      messageType,
-      mediaUrl,
-      roomId: [myData.id, userId].join("-"),
-    });
+    if (socket) {
+      socket.emit("sendMessage", {
+        senderId: myData.id,
+        senderName: myData.name,
+        receoientId: userId,
+        messageText,
+        messageType,
+        mediaUrl,
+        roomId: [myData.id, userId].join("-"),
+      });
+    }
 
     setMessages((prevMessages) => [
       ...prevMessages,
@@ -295,7 +312,7 @@ const MassegeBox = () => {
     setDeleteLoading(true);
     try {
       const response = await fetch(
-        `https://flybook.com.bd/api/delete-message/${messageId}`,
+        `https://fly-book-server-lzu4.onrender.com/api/delete-message/${messageId}`,
         {
           method: "DELETE",
           headers: {
@@ -378,11 +395,17 @@ const MassegeBox = () => {
                 src={userW.profileImage}
                 alt={userW.name}
               />
-              <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></div>
+              {isUserOnline ? (
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+              ) : (
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-gray-400 rounded-full border-2 border-white"></div>
+              )}
             </div>
             <div>
               <h1 className="font-medium text-gray-900 text-sm">{userW.name}</h1>
-              <p className="text-xs text-gray-500">Online</p>
+              <p className="text-xs text-gray-500">
+                {isUserOnline ? "Online" : userW.lastSeen ? `Last seen ${new Date(userW.lastSeen).toLocaleTimeString()}` : "Offline"}
+              </p>
             </div>
           </Link>
         </div>

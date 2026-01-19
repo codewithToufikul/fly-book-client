@@ -27,8 +27,29 @@ const Notifications = () => {
   const axiosPublic = usePublicAxios();
 
   useEffect(() => {
-    localStorage.removeItem("notify");
-  }, []);
+    // Mark all notifications as read when page is visited
+    const markAsRead = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Mark all notifications as read
+        await axiosPublic.put("/api/notifications/mark-read", {
+          userId: user.id,
+        });
+        
+        // Clear localStorage count
+        localStorage.removeItem("unreadNotificationCount");
+        
+        // Dispatch event to reset notification counts in Navbar and DownNav
+        window.dispatchEvent(new CustomEvent('resetNotificationCount'));
+      } catch (error) {
+        console.error("Error marking notifications as read:", error);
+      }
+    };
+    
+    // Only mark as read once when component mounts
+    markAsRead();
+  }, [user?.id, axiosPublic]);
 
   const {
     isLoading,

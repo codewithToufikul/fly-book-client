@@ -9,7 +9,7 @@ const AiPosts = () => {
     const { isLoading, error, data, refetch } = useQuery({
         queryKey: ["aiPostData"],
         queryFn: () =>
-            fetch("http://localhost:3000/admin/post-ai").then((res) => res.json()),
+            fetch("https://fly-book-server-lzu4.onrender.com/admin/post-ai").then((res) => res.json()),
     });
     const axiosPublic = usePublicAxios();
     const [formData, setFormData] = useState({
@@ -104,7 +104,7 @@ const AiPosts = () => {
 
             // Upload to ImgBB
             const response = await fetch(
-                `https://api.imgbb.com/1/upload?key=8b86a561b76cd59e16d93c1098c5018a`,
+                `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMAGE_HOSTING_KEY}`,
                 {
                     method: 'POST',
                     body: formData,

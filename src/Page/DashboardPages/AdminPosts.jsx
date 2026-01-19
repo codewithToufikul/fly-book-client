@@ -15,7 +15,7 @@ const AdminPosts = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("http://localhost:3000/all-home-books").then((res) => res.json()),
+      fetch("https://fly-book-server-lzu4.onrender.com/all-home-books").then((res) => res.json()),
   });
 
   const toggleExpand = (id) => {

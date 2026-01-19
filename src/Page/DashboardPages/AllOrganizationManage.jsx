@@ -5,7 +5,7 @@ const AllOrganizationManage = () => {
     queryKey: ["organizations"],
     queryFn: async () => {
       const response = await fetch(
-        "http://localhost:3000/api/v1/organizations"
+        "https://fly-book-server-lzu4.onrender.com/api/v1/organizations"
       );
       const data = await response.json();
       return data;

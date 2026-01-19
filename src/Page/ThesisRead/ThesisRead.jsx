@@ -3,14 +3,13 @@ import { useParams } from "react-router";
 import Navbar from "../../Components/Navbar/Navbar";
 import DownNav from "../../Components/DownNav/DownNav";
 import { useQuery } from "@tanstack/react-query";
-import { Linkify } from 'react-linkify';
 
 const ThesisRead = () => {
   const { postId } = useParams();
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("http://localhost:3000/thesis").then((res) => res.json()),
+      fetch("https://fly-book-server-lzu4.onrender.com/thesis").then((res) => res.json()),
   });
 
   if (isLoading) {

@@ -124,7 +124,7 @@ function AddCourse() {
       }, 200);
 
       const res = await fetch(
-        "https://api.cloudinary.com/v1_1/dljmobi4k/video/upload",
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/video/upload`,
         {
           method: "POST",
           body: vData,
@@ -164,7 +164,7 @@ function AddCourse() {
         thumbData.append("upload_preset", "flybook");
 
         const res = await fetch(
-          "https://api.cloudinary.com/v1_1/dljmobi4k/image/upload",
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
           {
             method: "POST",
             body: thumbData,
@@ -187,7 +187,7 @@ function AddCourse() {
         delete v.uploadProgress;
       });
 
-      const response = await fetch("http://localhost:3000/api/courses", {
+      const response = await fetch("https://fly-book-server-lzu4.onrender.com/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSubmit),

@@ -18,19 +18,24 @@ import { FaLocationDot } from "react-icons/fa6";
 import heartfill from "../../assets/heart.png";
 import DownNav from "../../Components/DownNav/DownNav";
 import done from "../../assets/check.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import useAllFriends from "../../Hooks/useAllFriends";
 import imageCompression from "browser-image-compression";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { FaNoteSticky } from "react-icons/fa6";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import { useSocket } from "../../contexts/SocketContext";
+import Swal from "sweetalert2";
+import { MdOutlineEdit } from "react-icons/md";
 
 const Profile = () => {
   const { user, loading: userLoading, refetch } = useUser();
+  const queryClient = useQueryClient();
+  const socket = useSocket();
   const [loadingUpload, setLoadingUpload] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState(null);
   const [faceApiLoading, setFaceApiLoading] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [isVideoStarted, setIsVideoStarted] = useState(false);
@@ -46,6 +51,24 @@ const Profile = () => {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [referredUsers, setReferredUsers] = useState([]);
+  const [loadingReferred, setLoadingReferred] = useState(false);
+  const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [updatingPost, setUpdatingPost] = useState(false);
+
+  // Safely get token from localStorage
+  useEffect(() => {
+    try {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
+    } catch (error) {
+      console.error("Error accessing localStorage:", error);
+      setToken(null);
+    }
+  }, []);
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -58,21 +81,22 @@ const Profile = () => {
     // Scroll to top
     window.scrollTo(0, 0);
 
-    // Load face-api models
+    // Defer face-api models loading - only load when needed (lazy load)
     const loadModels = async () => {
       try {
         setFaceApiLoading(true);
-        console.log("Loading face-api models...");
-        
+
+        // Dynamic import for face-api to reduce initial bundle size
+        const faceapi = await import('face-api.js');
+
         await Promise.all([
           faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
           faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
           faceapi.nets.faceRecognitionNet.loadFromUri("/models")
         ]);
-        
+
         setModelsLoaded(true);
         setFaceApiLoading(false);
-        console.log("Face-api models loaded successfully");
       } catch (error) {
         console.error("Error loading face-api models:", error);
         setFaceApiLoading(false);
@@ -82,20 +106,110 @@ const Profile = () => {
 
     // Fetch notes
     const fetchNotes = async () => {
+      if (!token) return;
       try {
         const response = await axiosPublic.get(
           "/notes",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setNotes(response.data.notes);
+        if (response.data?.notes) {
+          setNotes(response.data.notes);
+        }
       } catch (error) {
         console.error("Error fetching notes:", error);
+        // Don't throw, just log the error
       }
     };
 
-    loadModels();
+    // Load face-api models only when user actually needs it (e.g., when opening camera)
+    // For now, defer loading by 2 seconds to not block initial render
+    const faceApiTimer = setTimeout(() => {
+      loadModels();
+    }, 2000);
+
     fetchNotes();
-  }, [token]);
+    fetchReferredUsers();
+
+    return () => clearTimeout(faceApiTimer);
+  }, [token, axiosPublic, user?.id]);
+
+  // Listen for wallet updates from socket
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+
+    const handleWalletUpdate = (data) => {
+      console.log("💰 Wallet updated via socket:", data);
+      // Invalidate and refetch user profile to get updated wallet balance
+      queryClient.invalidateQueries(["userProfile"]);
+      refetch();
+    };
+
+    socket.on("walletUpdated", handleWalletUpdate);
+
+    return () => {
+      socket.off("walletUpdated", handleWalletUpdate);
+    };
+  }, [socket, user?.id, refetch, queryClient]);
+
+  // Periodic refetch for wallet updates (every 15 seconds when on profile page)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const interval = setInterval(() => {
+      // Invalidate and refetch for wallet updates
+      queryClient.invalidateQueries(["userProfile"]);
+      refetch({
+        cancelRefetch: false,
+        throwOnError: false
+      });
+    }, 15000); // Refetch every 15 seconds (balanced - not too frequent, not too slow)
+
+    return () => clearInterval(interval);
+  }, [user?.id, refetch, queryClient]);
+
+  // Log user data for debugging (only in dev) - MUST be before early return
+  useEffect(() => {
+    if (import.meta.env.DEV && user) {
+      console.log("👤 Current user data:", user);
+      console.log("💰 FlyWallet balance:", user.flyWallet);
+    }
+  }, [user]);
+
+  // Close wallet dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (walletDropdownOpen && !event.target.closest('.wallet-dropdown-container')) {
+        setWalletDropdownOpen(false);
+      }
+    };
+
+    if (walletDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [walletDropdownOpen]);
+
+  // Fetch referred users
+  const fetchReferredUsers = async () => {
+    if (!token || !user?.id) return;
+    setLoadingReferred(true);
+    try {
+      const response = await axiosPublic.get(
+        "/users/referred",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data?.success) {
+        setReferredUsers(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching referred users:", error);
+    } finally {
+      setLoadingReferred(false);
+    }
+  };
 
   const {
     data,
@@ -105,6 +219,11 @@ const Profile = () => {
     queryKey: ["postsData"],
     queryFn: () =>
       axiosPublic.get("/opinion/posts").then((res) => res.data.data),
+    retry: 1,
+    staleTime: 0, // Mark data as stale immediately to ensure refetch always hits the server
+    cacheTime: 1 * 60 * 1000, // Reduced cache time (1 minute)
+    refetchOnWindowFocus: false,
+    throwOnError: false,
   });
 
   const handlePostLike = async (postId) => {
@@ -150,7 +269,7 @@ const Profile = () => {
   const updateVerificationStatus = async (status) => {
     try {
       await axios.put(
-        "http://localhost:3000/profile/verification",
+        "https://fly-book-server-lzu4.onrender.com/profile/verification",
         { verificationStatus: status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -165,14 +284,14 @@ const Profile = () => {
   const startVideo = async () => {
     try {
       console.log("Starting camera...");
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: 640, 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: 640,
           height: 480,
           facingMode: 'user'
-        } 
+        }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
@@ -180,12 +299,12 @@ const Profile = () => {
           videoRef.current.play();
         };
       }
-      
+
       return stream;
     } catch (error) {
       console.error("Error accessing camera:", error);
       let errorMessage = "Failed to access camera. ";
-      
+
       if (error.name === 'NotAllowedError') {
         errorMessage += "Please allow camera permission.";
       } else if (error.name === 'NotFoundError') {
@@ -195,7 +314,7 @@ const Profile = () => {
       } else {
         errorMessage += "Please check your camera settings.";
       }
-      
+
       toast.error(errorMessage);
       setIsVideoStarted(false);
       throw error;
@@ -210,7 +329,7 @@ const Profile = () => {
 
     console.log("Starting face detection...");
     setVerificationStatus("Detecting face...");
-    
+
     const interval = setInterval(async () => {
       if (videoRef.current && videoRef.current.videoWidth > 0) {
         try {
@@ -226,7 +345,7 @@ const Profile = () => {
             await updateVerificationStatus(true);
             clearInterval(interval);
             setDetectionInterval(null);
-            
+
             // Stop camera after successful verification
             setTimeout(() => {
               stopCamera();
@@ -246,13 +365,13 @@ const Profile = () => {
 
   const stopCamera = () => {
     console.log("Stopping camera...");
-    
+
     // Clear detection interval
     if (detectionInterval) {
       clearInterval(detectionInterval);
       setDetectionInterval(null);
     }
-    
+
     // Stop video stream
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject;
@@ -263,7 +382,7 @@ const Profile = () => {
       });
       videoRef.current.srcObject = null;
     }
-    
+
     setIsVideoStarted(false);
     setVerificationStatus(null);
   };
@@ -277,9 +396,9 @@ const Profile = () => {
     try {
       setIsVideoStarted(true);
       setVerificationStatus("Starting camera...");
-      
+
       await startVideo();
-      
+
       // Wait a bit for video to stabilize before starting detection
       setTimeout(() => {
         startDetection();
@@ -324,7 +443,7 @@ const Profile = () => {
         const imageUrl = response.data.data.url;
 
         await axios.put(
-          "http://localhost:3000/profile/update",
+          "https://fly-book-server-lzu4.onrender.com/profile/update",
           { profileImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -373,7 +492,7 @@ const Profile = () => {
         console.log(imageUrl);
 
         await axios.put(
-          "http://localhost:3000/profile/cover/update",
+          "https://fly-book-server-lzu4.onrender.com/profile/cover/update",
           { coverImageUrl: imageUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -391,10 +510,19 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("notify");
-    refetch();
+    // Clear all localStorage data
+    localStorage.clear();
+
+    // Clear React Query cache
+    queryClient.clear();
+
+    // Navigate to login
     navigate("/login");
+
+    // Force reload to ensure complete state reset
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   if (userLoading || postLoading || isLoading) {
@@ -408,7 +536,9 @@ const Profile = () => {
     );
   }
 
-  const myPosts = data.filter((post) => post.userId === user.id);
+  const myPosts = (data && Array.isArray(data) && user?.id)
+    ? data.filter((post) => post.userId === user.id)
+    : [];
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -424,7 +554,7 @@ const Profile = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:3000/profile/updateDetails",
+        "https://fly-book-server-lzu4.onrender.com/profile/updateDetails",
         updateDetails,
         {
           headers: {
@@ -455,7 +585,7 @@ const Profile = () => {
       const updateDetails = { userLocation: { latitude, longitude } };
 
       const response = await axios.put(
-        "http://localhost:3000/profile/updateDetails/location",
+        "https://fly-book-server-lzu4.onrender.com/profile/updateDetails/location",
         updateDetails,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -520,6 +650,103 @@ const Profile = () => {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await axiosPublic.delete(`/opinion/delete/${postId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (response.data.success) {
+            Swal.fire("Deleted!", "Your post has been deleted.", "success");
+            postRefetch();
+          }
+        } catch (error) {
+          console.error("Error deleting post:", error);
+          toast.error("Failed to delete post.");
+        }
+      }
+    });
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setEditDescription(post.description);
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editDescription.trim()) {
+      toast.error("Description cannot be empty!");
+      return;
+    }
+
+    setUpdatingPost(true);
+    try {
+      const response = await axiosPublic.put(
+        `/opinion/edit/${editingPost._id}`,
+        { description: editDescription },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        toast.success("Post updated successfully!");
+        setShowEditModal(false);
+        setEditingPost(null);
+        postRefetch();
+      }
+    } catch (error) {
+      console.error("Error updating post:", error);
+      toast.error("Failed to update post.");
+    } finally {
+      setUpdatingPost(false);
+    }
+  };
+
+  // Show loading state while user data is being fetched
+  if (userLoading || !user || !token) {
+    return (
+      <div>
+        <Navbar />
+        <div className="max-w-[1220px] mx-auto">
+          <div className="flex justify-center items-center min-h-screen">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure user object has all required properties with defaults
+  const safeUser = {
+    id: user?.id || '',
+    name: user?.name || 'User',
+    userName: user?.userName || '',
+    profileImage: user?.profileImage || 'https://i.ibb.co/mcL9L2t/f10ff70a7155e5ab666bcdd1b45b726d.jpg',
+    coverImage: user?.coverImage || 'https://i.ibb.co.com/xmyN9fT/freepik-expand-75906-min.png',
+    email: user?.email || '',
+    number: user?.number || '',
+    work: user?.work || '',
+    studies: user?.studies || '',
+    currentCity: user?.currentCity || '',
+    hometown: user?.hometown || '',
+    verificationStatus: user?.verificationStatus || false,
+    referrerId: user?.referrerId || null,
+    referrerName: user?.referrerName || user?.referredBy || null,
+    flyWallet: user?.flyWallet || 0,
+    wallet: user?.wallet || 0,
+    ...user, // Spread to include any other properties
+  };
+
   return (
     <div>
       <Navbar />
@@ -528,10 +755,7 @@ const Profile = () => {
           <div className="w-full h-[160px] lg:h-[350px] lg:mt-2 relative">
             <img
               className="w-full h-full object-cover object-center rounded-t-xl lg:rounded-xl"
-              src={
-                user?.coverImage ||
-                "https://i.ibb.co.com/xmyN9fT/freepik-expand-75906-min.png"
-              }
+              src={safeUser.coverImage}
               alt="Update a Cover Photo"
             />
             <div className=" absolute right-0 bottom-1">
@@ -560,10 +784,7 @@ const Profile = () => {
             <div className="flex items-center gap-4">
               <div className="relative w-[100px] h-[100px] lg:w-[180px] mt-[-30px] lg:ml-[60px] lg:h-[180px] border-4 border-white rounded-full">
                 <img
-                  src={
-                    user.profileImage ||
-                    "https://i.ibb.co/mcL9L2t/f10ff70a7155e5ab666bcdd1b45b726d.jpg"
-                  }
+                  src={safeUser.profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover rounded-full"
                 />
@@ -592,10 +813,10 @@ const Profile = () => {
               </div>
               <div>
                 <h1 className="text-lg lg:text-3xl font-semibold">
-                  {user?.name}
+                  {safeUser.name}
                 </h1>
                 <p className="text-sm lg:text-base text-gray-500">
-                  @{user?.userName}
+                  @{safeUser.userName}
                 </p>
               </div>
             </div>
@@ -663,7 +884,7 @@ const Profile = () => {
             <dialog id="my_modal_3" className="modal">
               <div className="modal-box max-w-2xl">
                 <form method="dialog">
-                  <button 
+                  <button
                     className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
                     onClick={stopCamera}
                   >
@@ -673,7 +894,7 @@ const Profile = () => {
                 <h1 className="text-xl font-medium text-center mb-4">
                   Face Verification
                 </h1>
-                
+
                 {faceApiLoading && (
                   <div className="text-center mb-4">
                     <div className="loading loading-spinner loading-md"></div>
@@ -682,7 +903,7 @@ const Profile = () => {
                 )}
 
                 <div className="space-y-4">
-                  {user.verificationStatus ? (
+                  {safeUser.verificationStatus ? (
                     <div className="flex flex-col items-center">
                       <img className="w-[200px]" src={done} alt="Verified" />
                       <p className="text-green-600 font-medium mt-2">Face Already Verified ✅</p>
@@ -699,8 +920,8 @@ const Profile = () => {
                             {faceApiLoading ? 'Loading Models...' : 'Start Camera'}
                           </button>
                         ) : (
-                          <button 
-                            className="btn btn-error" 
+                          <button
+                            className="btn btn-error"
                             onClick={stopCamera}
                           >
                             Stop Camera
@@ -716,7 +937,7 @@ const Profile = () => {
                           autoPlay
                           muted
                           className="rounded-lg border-2 border-gray-300"
-                          style={{ 
+                          style={{
                             display: isVideoStarted ? 'block' : 'none',
                             transform: 'scaleX(-1)' // Mirror the video for better user experience
                           }}
@@ -760,64 +981,76 @@ const Profile = () => {
               </h1>
               <div>
                 <ul className=" space-y-5">
-                  {user.work ? (
+                  {safeUser.work ? (
                     <li className=" flex items-center gap-2">
                       <span className=" text-2xl lg:text-3xl text-gray-400">
                         <MdWork />
                       </span>
                       <span className=" text-sm "> Works at </span>
                       <span className=" text-sm lg:text-base font-medium text-gray-700">
-                        {user.work}
+                        {safeUser.work}
                       </span>
                     </li>
-                  ) : (
-                    ""
-                  )}
-                  {user.studies ? (
+                  ) : null}
+                  {safeUser.studies ? (
                     <li className=" flex items-center gap-2">
                       <span className=" text-2xl lg:text-[28px] text-gray-400">
                         <FaUserGraduate />
                       </span>
                       <span className=" text-sm "> Studies at </span>
                       <span className=" text-sm lg:text-base font-medium text-gray-700">
-                        {user.studies}
+                        {safeUser.studies}
                       </span>
                     </li>
-                  ) : (
-                    ""
-                  )}
-                  {user.currentCity ? (
+                  ) : null}
+                  {safeUser.currentCity ? (
                     <li className=" flex items-center gap-2">
                       <span className=" text-2xl lg:text-[28px] text-gray-400">
                         <HiHomeModern />
                       </span>
                       <span className=" text-sm "> Lives in </span>
                       <span className=" text-sm lg:text-base font-medium text-gray-700">
-                        {user.currentCity}
+                        {safeUser.currentCity}
                       </span>
                     </li>
-                  ) : (
-                    ""
-                  )}
-                  {user.hometown ? (
+                  ) : null}
+                  {safeUser.hometown ? (
                     <li className=" flex items-center gap-2">
                       <span className=" text-2xl lg:text-[28px] text-gray-400">
                         <FaLocationDot />
                       </span>
                       <span className=" text-sm "> From </span>
                       <span className=" text-sm lg:text-base font-medium text-gray-700">
-                        {user.hometown}
+                        {safeUser.hometown}
                       </span>
                     </li>
-                  ) : (
-                    ""
-                  )}
+                  ) : null}
+                  {safeUser.referrerName ? (
+                    <li className=" flex items-center gap-2">
+                      <span className=" text-2xl lg:text-[28px] text-gray-400">
+                        👤
+                      </span>
+                      <span className=" text-sm "> Referred by </span>
+                      {safeUser.referrerId ? (
+                        <Link
+                          to={`/profile/${safeUser.referrerId}`}
+                          className=" text-sm lg:text-base font-medium text-blue-600 hover:underline"
+                        >
+                          @{safeUser.referrerName}
+                        </Link>
+                      ) : (
+                        <span className=" text-sm lg:text-base font-medium text-gray-700">
+                          @{safeUser.referrerName}
+                        </span>
+                      )}
+                    </li>
+                  ) : null}
                   <li className=" flex items-center gap-2">
                     <span className=" text-2xl lg:text-3xl text-gray-400">
                       <IoIosMail />
                     </span>
                     <span className=" text-sm lg:text-base text-gray-700">
-                      {user.email}
+                      {safeUser.email}
                     </span>
                   </li>
                   <li className=" flex items-center gap-3">
@@ -825,13 +1058,13 @@ const Profile = () => {
                       <FaPhoneAlt />
                     </span>
                     <span className=" text-sm lg:text-base text-gray-700">
-                      {user.number}
+                      {safeUser.number}
                     </span>
                   </li>
                 </ul>
                 <button
                   className={`btn w-full my-4`}
-                  disabled={user.verificationStatus === false}
+                  disabled={safeUser.verificationStatus === false}
                   onClick={() =>
                     document.getElementById("my_modal_4").showModal()
                   }
@@ -857,7 +1090,7 @@ const Profile = () => {
                         type="text"
                         name="work"
                         placeholder="Add your work"
-                        defaultValue={user?.work}
+                        defaultValue={safeUser.work}
                         className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
                       />
 
@@ -868,7 +1101,7 @@ const Profile = () => {
                         type="text"
                         name="studies"
                         placeholder="Add your Current Studies"
-                        defaultValue={user?.studies}
+                        defaultValue={safeUser.studies}
                         className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
                       />
 
@@ -878,7 +1111,7 @@ const Profile = () => {
                       <input
                         type="text"
                         name="currentCity"
-                        defaultValue={user?.currentCity}
+                        defaultValue={safeUser.currentCity}
                         placeholder="Add your current city"
                         className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
                       />
@@ -889,7 +1122,7 @@ const Profile = () => {
                       <input
                         type="text"
                         name="hometown"
-                        defaultValue={user?.hometown}
+                        defaultValue={safeUser.hometown}
                         placeholder="Add your Hometown"
                         className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
                       />
@@ -900,7 +1133,7 @@ const Profile = () => {
                       <input
                         type="email"
                         name="email"
-                        defaultValue={user?.email}
+                        defaultValue={safeUser.email}
                         placeholder={"Add your email"}
                         className="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs"
                       />
@@ -915,6 +1148,96 @@ const Profile = () => {
                 </dialog>
               </div>
             </div>
+
+            {/* Wallet Section with Dropdown */}
+            <div className="bg-gray-50 p-3 rounded-xl mt-3">
+              <h1 className="text-xl lg:text-2xl font-medium py-1 lg:py-2 mb-3 border-b-2">
+                My Wallets
+              </h1>
+
+              {/* Clickable Wallet Button */}
+              <div className="relative wallet-dropdown-container">
+                <button
+                  onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 p-4 rounded-lg shadow-md transition-all duration-200 flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-white text-3xl lg:text-4xl">
+                      💰
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-white text-sm lg:text-base font-medium">
+                        Wallets
+                      </h3>
+                      <p className="text-white text-xs lg:text-sm opacity-90">
+                        Click to view all wallets
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <svg
+                      className={`w-5 h-5 transition-transform duration-200 ${walletDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Dropdown Content */}
+                {walletDropdownOpen && (
+                  <div className="mt-3 space-y-3 animate-fadeIn">
+                    {/* FlyWallet */}
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg shadow-md transform transition-all duration-200 hover:scale-105">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-white text-sm lg:text-base font-medium mb-1">
+                            FlyWallet
+                          </h3>
+                          <p className="text-white text-2xl lg:text-3xl font-bold">
+                            {parseFloat(safeUser.flyWallet || 0).toFixed(2)}
+                          </p>
+                          <Link to="/wallate-shop">
+                            <button className="mt-2 bg-white text-blue-600 px-3 py-1 rounded-full text-xs font-bold hover:bg-gray-100 transition-colors">
+                              Use your coin
+                            </button>
+                          </Link>
+                        </div>
+                        <div className="text-white text-3xl lg:text-4xl">
+                          💰
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* My Wallet */}
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg shadow-md transform transition-all duration-200 hover:scale-105">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-white text-sm lg:text-base font-medium mb-1">
+                            My Wallet
+                          </h3>
+                          <p className="text-white text-2xl lg:text-3xl font-bold">
+                            {parseFloat(safeUser.wallet || 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-white text-3xl lg:text-4xl">
+                          💳
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className=" bg-gray-50 p-3 rounded-xl mt-3">
               <h1 className=" text-xl lg:text-2xl font-medium py-1 lg:py-2 mb-2 border-b-2">
                 Book Fiends
@@ -979,6 +1302,54 @@ const Profile = () => {
                 )}
               </div>
             </div>
+
+            {/* Referred Users Section */}
+            <div className="bg-gray-50 p-3 rounded-xl mt-3">
+              <h1 className="text-xl lg:text-2xl font-medium py-1 lg:py-2 mb-2 border-b-2">
+                Referred Users
+              </h1>
+              {loadingReferred ? (
+                <div className="flex justify-center py-4">
+                  <span className="loading loading-spinner loading-md"></span>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  {referredUsers.length > 0 ? (
+                    <div className="grid gap-2 grid-cols-3">
+                      {referredUsers.map((referredUser) => (
+                        <Link
+                          to={`/profile/${referredUser._id}`}
+                          className="lg:w-[130px] lg:h-[160px] w-[100px] h-[160px] bg-white shadow-sm rounded-lg flex flex-col items-center hover:shadow-md transition-shadow"
+                          key={referredUser._id}
+                        >
+                          <div className="w-[100px] lg:w-[130px] h-[140px]">
+                            <img
+                              className="w-full h-[110px] lg:h-[120px] rounded-t-2xl object-cover"
+                              src={referredUser.profileImage || 'https://i.ibb.co/mcL9L2t/f10ff70a7155e5ab666bcdd1b45b726d.jpg'}
+                              alt={referredUser.name}
+                            />
+                          </div>
+                          <div className="w-full pl-3 lg:pl-0 px-1 flex flex-col gap-3 justify-between">
+                            <h1 className="text-xs lg:text-[14px] font-medium text-center py-2">
+                              {referredUser.name}
+                            </h1>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 py-4">
+                      No referred users yet
+                    </p>
+                  )}
+                  {referredUsers.length > 0 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Total: {referredUsers.length} user{referredUsers.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className=" col-span-3 lg:ml-8 space-y-8 lg:overflow-y-auto lg:h-[calc(100vh-100px)]">
             {myPosts
@@ -990,7 +1361,7 @@ const Profile = () => {
                   className="card bg-gray-50 shadow-sm rounded-md"
                 >
                   <div className="card-body p-4">
-                    <Link className="flex items-center gap-3 border-b-2 pb-2 lg:pb-3 shadow-sm px-3">
+                    <div className="flex items-center gap-3 border-b-2 pb-2 lg:pb-3 shadow-sm px-3">
                       <div className="lg:w-[60px] w-[50px] h-[50px] lg:h-[60px]">
                         <img
                           className="w-full h-full rounded-full object-cover"
@@ -1006,7 +1377,24 @@ const Profile = () => {
                           } at ${post.time.slice(0, -6) + post.time.slice(-3)
                           }`}</p>
                       </div>
-                    </Link>
+                      <div className="ml-auto dropdown dropdown-end">
+                        <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-circle">
+                          <HiDotsHorizontal className="text-xl" />
+                        </div>
+                        <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-40 p-2 shadow-lg border border-gray-100">
+                          <li>
+                            <button onClick={(e) => { e.preventDefault(); handleEditPost(post); }} className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 py-2">
+                              <MdOutlineEdit className="text-lg" /> Edit
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={(e) => { e.preventDefault(); handleDeletePost(post._id); }} className="flex items-center gap-2 text-red-600 hover:bg-red-50 py-2">
+                              <RiDeleteBin6Line className="text-lg" /> Delete
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                     <pre
                       style={{
                         fontFamily: "inherit",
@@ -1048,7 +1436,7 @@ const Profile = () => {
 
                   <div className="p-5 flex justify-between items-center">
                     <div className="flex items-center gap-1">
-                      {user && post.likedBy?.includes(user.id) ? (
+                      {safeUser.id && post.likedBy?.includes(safeUser.id) ? (
                         <img
                           onClick={() => handleUnlike(post._id)}
                           className="w-8 lg:w-10 mr-2 cursor-pointer"
@@ -1106,6 +1494,75 @@ const Profile = () => {
               >
                 Save Note
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white">
+              <h3 className="text-xl font-bold">Edit Your Post</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="hover:bg-white/20 p-2 rounded-full transition-colors"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <img
+                  src={safeUser.profileImage}
+                  alt="Me"
+                  className="w-12 h-12 rounded-full border-2 border-blue-100 object-cover"
+                />
+                <div>
+                  <h4 className="font-semibold text-gray-800">{safeUser.name}</h4>
+                  <p className="text-xs text-gray-500">Public Post</p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full h-48 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none transition-all text-gray-800"
+                  placeholder="What's on your mind?"
+                />
+                <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                  {editDescription.length} characters
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-2.5 border border-gray-300 rounded-full font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  disabled={updatingPost}
+                >
+                  Discard Changes
+                </button>
+                <button
+                  onClick={handleUpdatePost}
+                  className={`px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all flex items-center gap-2 ${updatingPost ? "opacity-75 cursor-wait" : ""
+                    }`}
+                  disabled={updatingPost}
+                >
+                  {updatingPost ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Update Post"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

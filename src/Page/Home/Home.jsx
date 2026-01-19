@@ -97,81 +97,163 @@ const Home = () => {
 
         const url =
           activeCategory === "All"
-            ? "http://localhost:3000/all-home-books"
-            : `http://localhost:3000/all-home-books?category=${activeCategory}`;
+            ? "https://fly-book-server-lzu4.onrender.com/all-home-books"
+            : `https://fly-book-server-lzu4.onrender.com/all-home-books?category=${activeCategory}`;
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
+        // Add timeout to prevent infinite loading (reduced to 8 seconds for faster response)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
-        const posts = Array.isArray(data) ? data : [];
-        const sortedData = [...posts].sort((a, b) => {
-          try {
-            const dateA = (a.date || "").replace(/["']/g, "").trim();
-            const dateB = (b.date || "").replace(/["']/g, "").trim();
-            const timeA = (a.time || "").replace(/["']/g, "").trim();
-            const timeB = (b.time || "").replace(/["']/g, "").trim();
-
-            const getTimestamp = (date, time) => {
-              const [month, day, year] = date
-                .split("/")
-                .map((n) => parseInt(n, 10));
-              const [timeStr, period] = time.split(" ");
-              const [hours, minutes, seconds] = timeStr
-                .split(":")
-                .map((n) => parseInt(n, 10));
-              let hours24 = hours;
-              if (period === "PM" && hours !== 12) hours24 += 12;
-              if (period === "AM" && hours === 12) hours24 = 0;
-              return new Date(
-                year,
-                month - 1,
-                day,
-                hours24,
-                minutes,
-                seconds
-              ).getTime();
-            };
-            const timestampA = getTimestamp(dateA, timeA);
-            const timestampB = getTimestamp(dateB, timeB);
-
-            return timestampB - timestampA;
-          } catch (error) {
-            console.error(
-              "Sorting error:",
-              error,
-              "\nPost A:",
-              a,
-              "\nPost B:",
-              b
-            );
-            return 0;
+        let res;
+        try {
+          res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json',
+            },
+            // Add cache control
+            cache: 'no-cache',
+          });
+          clearTimeout(timeoutId);
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Request timeout - server took too long to respond. Please check your connection.');
           }
-        });
+          throw fetchError;
+        }
+          
+        if (!res.ok) {
+          // If server returns error, try to return cached data
+          const cachedData = queryClient.getQueryData(["adminPostData", activeCategory]);
+          if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+            console.warn(`API error ${res.status} - returning cached data`);
+            return cachedData;
+          }
+          console.error(`API error: ${res.status} ${res.statusText}`);
+          return [];
+        }
+        
+        const data = await res.json();
+        
+        // Validate data is an array
+        if (!Array.isArray(data)) {
+          
+          return [];
+        }
+        
+        // Debug: Log first post to see structure
+        if (data.length > 0) {
+          
+        }
+
+        // Data is already sorted by backend, use it directly
+        // Only do client-side sort if needed (fallback)
+        let sortedData = data;
+        
+        // If data has date/time fields, ensure proper sorting
+        if (data.length > 0 && (data[0].date || data[0].createdAt)) {
+          sortedData = [...data].sort((a, b) => {
+            try {
+              // Prefer createdAt if available (faster)
+              if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+              }
+              
+              // Fallback to date/time parsing
+              const dateA = (a.date || "").replace(/["']/g, "").trim();
+              const dateB = (b.date || "").replace(/["']/g, "").trim();
+              const timeA = (a.time || "").replace(/["']/g, "").trim();
+              const timeB = (b.time || "").replace(/["']/g, "").trim();
+
+              if (!dateA || !dateB) return 0;
+
+              const getTimestamp = (date, time) => {
+                try {
+                  const [month, day, year] = date
+                    .split("/")
+                    .map((n) => parseInt(n, 10));
+                  if (!time) return new Date(year, month - 1, day).getTime();
+                  
+                  const [timeStr, period] = time.split(" ");
+                  const [hours, minutes, seconds = 0] = timeStr
+                    .split(":")
+                    .map((n) => parseInt(n, 10) || 0);
+                  let hours24 = hours;
+                  if (period === "PM" && hours !== 12) hours24 += 12;
+                  if (period === "AM" && hours === 12) hours24 = 0;
+                  return new Date(
+                    year,
+                    month - 1,
+                    day,
+                    hours24,
+                    minutes,
+                    seconds
+                  ).getTime();
+                } catch {
+                  return 0;
+                }
+              };
+              const timestampA = getTimestamp(dateA, timeA);
+              const timestampB = getTimestamp(dateB, timeB);
+
+              return timestampB - timestampA;
+            } catch (error) {
+              // Silent fail - keep original order
+              return 0;
+            }
+          });
+        }
+        
         setVisiblePosts(sortedData.slice(0, POSTS_PER_PAGE));
         setCategoryLoading(false);
         return sortedData;
       } catch (error) {
         setCategoryLoading(false);
         console.error("Error fetching posts:", error);
-        throw error;
+        
+        // Try to return cached data as fallback
+        const cachedData = queryClient.getQueryData(["adminPostData", activeCategory]);
+        if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+          console.warn("Error occurred - returning cached data as fallback");
+          return cachedData;
+        }
+        
+        // Don't show toast for timeout errors (user already sees loading)
+        if (!error.message.includes('timeout')) {
+          toast.error("Failed to load posts. Please refresh the page.");
+        }
+        
+        // Return empty array instead of throwing to prevent infinite loading
+        return []; // Return empty array so page can still render
       }
     },
-    retry: 1,
-    staleTime: 30000,
+    retry: 2, // Retry 2 times on failure
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes
+    cacheTime: 10 * 60 * 1000, // Cache for 10 minutes - keep in cache for 10 minutes
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true, // Refetch when network reconnects
+    // Don't fail the query if there's an error - return empty data
+    throwOnError: false,
+    // Use stale data while refetching (stale-while-revalidate)
+    keepPreviousData: true,
   });
 
+  // Defer geolocation API call - load after initial render
   useEffect(() => {
-    fetch("https://geolocation-db.com/json/")
-      .then((res) => res.json())
-      .then((data) => {
-        setUserCountry(data.country_name);
-        determineLanguage(data.country_code);
-      })
-      .catch((err) => console.error("Error fetching location:", err));
+    // Load geolocation after a delay to not block initial render
+    const timer = setTimeout(() => {
+      fetch("https://geolocation-db.com/json/")
+        .then((res) => res.json())
+        .then((data) => {
+          setUserCountry(data.country_name);
+          determineLanguage(data.country_code);
+        })
+        .catch((err) => console.error("Error fetching location:", err));
+    }, 1000); // Load after 1 second
+
+    return () => clearTimeout(timer);
   }, []);
 
   const determineLanguage = (countryCode) => {
@@ -198,8 +280,6 @@ const Home = () => {
       TR: "tr",  // তুর্কি (Turkey
       FR: "fr",  // ফরাসি (France)
       BE: "fr",  // ফরাসি (Belgium)
-      CH: "fr",  // ফরাসি (Switzerland)
-      CA: "fr",  // ফরাসি (Canada)
       ES: "es",  // স্প্যানিশ (Spain)
       MX: "es",  // স্প্যানিশ (Mexico)
       CO: "es",  // স্প্যানিশ (Colombia)
@@ -354,7 +434,9 @@ const Home = () => {
     [dataLoading, hasMore, loading, loadMorePosts]
   );
 
-  if (isLoading || dataLoading || categoriesLoading) {
+  // Only show full page loading for initial user load
+  // Allow page to render even if data is loading
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen justify-center items-center">
         <div className="w-[100px] lg:w-[200px]">
@@ -368,16 +450,10 @@ const Home = () => {
   if (error || isError || !data) {
     return (
       <div className="flex flex-col min-h-screen justify-center items-center">
-        <h2 className="text-xl text-red-500 mb-4">Something went wrong!</h2>
-        <p className="text-gray-600">
-          Please check your internet connection and try again
-        </p>
-        <button
-          onClick={() => refetch()}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
+        <div className="w-[100px] lg:w-[200px]">
+          <img className="w-full" src={loadingLogo} alt="" />
+        </div>
+        <span className="loading loading-dots loading-lg"></span>
       </div>
     );
   }
@@ -486,7 +562,7 @@ const Home = () => {
   };
 
     const handleShare = async (postId) => {
-    const postUrl = `http://localhost:3000/post-details/${postId}`;
+    const postUrl = `https://fly-book-server-lzu4.onrender.com/post-details/${postId}`;
     try {
       await navigator.clipboard.writeText(postUrl);
       toast.success("Post Link Copied !")
@@ -552,33 +628,25 @@ const Home = () => {
             </div>
           </nav>
 
-          {isLoading ? (
-            <div className=" lg:flex flex-col min-h-screen justify-center hidden lg:block items-center">
-              <div className=" w-[100px] lg:w-[200px]">
-                <img className=" w-full " src={loadingLogo} alt="" />
+          <div className="space-y-5">
+            {categoryLoading || dataLoading ? (
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <span className="loading loading-spinner loading-lg"></span>
+                <p className="mt-4 text-gray-600">Loading posts...</p>
               </div>
-              <span className="loading loading-dots loading-lg"></span>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {categoryLoading ? (
-                <div className="flex flex-col items-center justify-center min-h-[200px]">
-                  <span className="loading loading-spinner loading-lg"></span>
-                  <p className="mt-4 text-gray-600">Loading posts...</p>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center min-h-[200px]">
-                  <p className="text-center text-red-500">
-                    Error loading posts. Please try again.
-                  </p>
-                  <button
-                    onClick={() => refetch()}
-                    className="mt-4 px-4 py-2 text-blue-600 hover:text-blue-800"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : !data || data.length === 0 ? (
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center min-h-[200px]">
+                <p className="text-center text-red-500">
+                  Error loading posts. Please try again.
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-800 px-6 py-2"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : !data || data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center min-h-[200px]">
                   <p className="text-center text-gray-500">
                     No posts available in{" "}
@@ -599,9 +667,26 @@ const Home = () => {
               ) : (
                 <>
                   {visiblePosts.map((post, index) => {
+                    // Ensure post has required fields with fallbacks
+                    // Try multiple possible field names
+                    const postMessage = post.message || post.postText || post.content || post.text || '';
+                    const postImage = post.image || post.postImage || post.imageUrl || post.photo || '';
+                    const postTitle = post.title || post.heading || 'Untitled';
+                    
+                    // Debug: Log first post to see what data we have
+                    if (index === 0) {
+                      console.log('Frontend post data:', {
+                        _id: post._id,
+                        title: postTitle,
+                        message: postMessage,
+                        image: postImage,
+                        allKeys: Object.keys(post)
+                      });
+                    }
+                    
                     const displayText = showTranslates[post._id] 
                       ? translatedTexts[post._id] || "Translation loading..."
-                      : post.message;
+                      : postMessage;
                     
                     const mobileMaxLength = 100;
                     const desktopMaxLength = 180;
@@ -621,81 +706,85 @@ const Home = () => {
                       >
                         <div className="card-body p-4">
                           <h2 className="card-title text-xl lg:text-3xl">
-                            {post.title}
+                            {postTitle}
                           </h2>
 
                           <div className="text-sm lg:text-lg whitespace-pre-wrap">
-                            {expandedPosts[post._id] ? (
-                              <div className="space-y-3">
-                                <Linkify
-                                  componentDecorator={(
-                                    decoratedHref,
-                                    decoratedText,
-                                    key
-                                  ) => (
-                                    <a
-                                      key={key}
-                                      href={decoratedHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      {decoratedText}
-                                    </a>
-                                  )}
-                                >
-                                  {displayText}
-                                </Linkify>
-                              </div>
+                            {displayText ? (
+                              expandedPosts[post._id] ? (
+                                <div className="space-y-3">
+                                  <Linkify
+                                    componentDecorator={(
+                                      decoratedHref,
+                                      decoratedText,
+                                      key
+                                    ) => (
+                                      <a
+                                        key={key}
+                                        href={decoratedHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {decoratedText}
+                                      </a>
+                                    )}
+                                  >
+                                    {displayText}
+                                  </Linkify>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="block sm:hidden">
+                                    <div className="space-y-3">
+                                      <Linkify
+                                        componentDecorator={(
+                                          decoratedHref,
+                                          decoratedText,
+                                          key
+                                        ) => (
+                                          <a
+                                            key={key}
+                                            href={decoratedHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline"
+                                          >
+                                            {decoratedText}
+                                          </a>
+                                        )}
+                                      >
+                                        {getTruncatedText(displayText, mobileMaxLength)}
+                                      </Linkify>
+                                    </div>
+                                  </span>
+                                  <span className="hidden sm:block">
+                                    <div className="space-y-3">
+                                      <Linkify
+                                        componentDecorator={(
+                                          decoratedHref,
+                                          decoratedText,
+                                          key
+                                        ) => (
+                                          <a
+                                            key={key}
+                                            href={decoratedHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline"
+                                          >
+                                            {decoratedText}
+                                          </a>
+                                        )}
+                                      >
+                                        {getTruncatedText(displayText, desktopMaxLength)}
+                                      </Linkify>
+                                    </div>
+                                  </span>
+                                </>
+                              )
                             ) : (
-                              <>
-                                <span className="block sm:hidden">
-                                  <div className="space-y-3">
-                                    <Linkify
-                                      componentDecorator={(
-                                        decoratedHref,
-                                        decoratedText,
-                                        key
-                                      ) => (
-                                        <a
-                                          key={key}
-                                          href={decoratedHref}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline"
-                                        >
-                                          {decoratedText}
-                                        </a>
-                                      )}
-                                    >
-                                      {getTruncatedText(displayText, mobileMaxLength)}
-                                    </Linkify>
-                                  </div>
-                                </span>
-                                <span className="hidden sm:block">
-                                  <div className="space-y-3">
-                                    <Linkify
-                                      componentDecorator={(
-                                        decoratedHref,
-                                        decoratedText,
-                                        key
-                                      ) => (
-                                        <a
-                                          key={key}
-                                          href={decoratedHref}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline"
-                                        >
-                                          {decoratedText}
-                                        </a>
-                                      )}
-                                    >
-                                      {getTruncatedText(displayText, desktopMaxLength)}
-                                    </Linkify>
-                                  </div>
-                                </span>
-                              </>
+                              <p className="text-gray-500 italic">No content available</p>
                             )}
                           </div>
 
@@ -708,7 +797,7 @@ const Home = () => {
 
                           <button
                             onClick={() =>
-                              handleTranslate(post._id, post.message)
+                              handleTranslate(post._id, postMessage)
                             }
                             className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 transition-colors mt-3"
                             disabled={tLoadings[post._id]}
@@ -736,13 +825,19 @@ const Home = () => {
                               : "Translate"}
                           </button>
                         </div>
-                        <figure className="w-full">
-                          <img
-                            className="h-[200px] lg:h-[300px] w-full"
-                            src={post.image}
-                            alt={post.title}
-                          />
-                        </figure>
+                        {postImage && (
+                          <figure className="w-full">
+                            <img
+                              className="h-[200px] lg:h-[300px] w-full object-cover"
+                              src={postImage}
+                              alt={postTitle}
+                              onError={(e) => {
+                                // Hide image if it fails to load
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </figure>
+                        )}
                         <div className="p-5 flex justify-between items-center">
                           <div className="flex items-center gap-1">
                             {user && post.likedBy?.includes(user.id) ? (
@@ -798,8 +893,7 @@ const Home = () => {
                   )}
                 </>
               )}
-            </div>
-          )}
+          </div>
         </div>
         <div className="hidden lg:block">
           <Suspense

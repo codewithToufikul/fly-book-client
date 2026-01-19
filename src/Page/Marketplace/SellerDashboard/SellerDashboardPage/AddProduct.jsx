@@ -19,22 +19,23 @@ const AddProduct = () => {
     stock: "",
     category: "",
     images: [],
+    coinUsagePercentage: 30, // Default 30%
   });
 
-const fetchCategories = async () => {
-  setLoading(true);
-  try {
-    const res = await axiosPublic.get("/get-product-categories");
-    // শুধু name গুলো নিলাম
-    const namesOnly = res.data.categories.map(cat => cat.name);
-    setCategories(namesOnly);
-  } catch (error) {
-    console.log(error);
-    toast.error("Failed to fetch categories");
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const res = await axiosPublic.get("/get-product-categories");
+      // শুধু name গুলো নিলাম
+      const namesOnly = res.data.categories.map(cat => cat.name);
+      setCategories(namesOnly);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch categories");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -142,6 +143,17 @@ const fetchCategories = async () => {
       return;
     }
 
+    if (formData.coinUsagePercentage === "" || isNaN(formData.coinUsagePercentage)) {
+      toast.error("Please enter a valid coin usage percentage!");
+      return;
+    }
+
+    const coinPct = parseInt(formData.coinUsagePercentage);
+    if (coinPct < 0 || coinPct > 100) {
+      toast.error("Coin usage percentage must be between 0 and 100!");
+      return;
+    }
+
     if (formData.images.length < 2) {
       toast.error("Product must have at least 2 images!");
       return;
@@ -171,8 +183,7 @@ const fetchCategories = async () => {
         imgData.append("image", image);
 
         const res = await fetch(
-          `https://api.imgbb.com/1/upload?key=${
-            import.meta.env.VITE_IMAGE_HOSTING_KEY
+          `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMAGE_HOSTING_KEY
           }`,
           {
             method: "POST",
@@ -217,6 +228,7 @@ const fetchCategories = async () => {
         stock: parseInt(formData.stock),
         category: formData.category.trim(),
         images: uploadedImageUrls,
+        coinUsagePercentage: parseInt(formData.coinUsagePercentage) || 0,
         createdAt: new Date().toISOString(),
         rating: 0,
         reviews: 0,
@@ -337,9 +349,8 @@ const fetchCategories = async () => {
                 <div className="flex items-center">
                   <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mr-2 sm:mr-3">
                     <svg
-                      className={`w-3 h-3 sm:w-5 sm:h-5 text-white ${
-                        loading ? "animate-spin" : ""
-                      }`}
+                      className={`w-3 h-3 sm:w-5 sm:h-5 text-white ${loading ? "animate-spin" : ""
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -356,8 +367,8 @@ const fetchCategories = async () => {
                     {imageUploading
                       ? "Uploading Images..."
                       : uploadProgress === 100
-                      ? "Product Created Successfully!"
-                      : "Creating Product..."}
+                        ? "Product Created Successfully!"
+                        : "Creating Product..."}
                   </span>
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-gray-600 bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
@@ -589,6 +600,43 @@ const fetchCategories = async () => {
                   ))}
                 </select>
               </div>
+
+              {/* Coin Usage Percentage */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-gray-700">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-teal-100 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                    <svg
+                      className="w-3 h-3 sm:w-4 sm:h-4 text-teal-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                      <path d="M12 7v5l3 3" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  Max Coin Usage (%) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="coinUsagePercentage"
+                    value={formData.coinUsagePercentage}
+                    onChange={handleChange}
+                    placeholder="30"
+                    min="0"
+                    max="100"
+                    className="w-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-gray-800 text-sm sm:text-base"
+                    required
+                  />
+                  <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold text-sm sm:text-base">
+                    %
+                  </div>
+                </div>
+                <p className="text-[10px] sm:text-xs text-gray-500 italic px-1">
+                  How much of the price can be paid with coins?
+                </p>
+              </div>
             </div>
 
             {/* Image Upload Section */}
@@ -614,11 +662,10 @@ const fetchCategories = async () => {
 
               {/* Upload Area */}
               <div
-                className={`relative border-3 border-dashed rounded-2xl p-6 sm:p-12 text-center transition-all duration-300 ${
-                  formData.images.length >= 6
-                    ? "border-gray-300 bg-gray-50"
-                    : "border-blue-300 bg-blue-50 hover:border-blue-400 hover:bg-blue-100"
-                }`}
+                className={`relative border-3 border-dashed rounded-2xl p-6 sm:p-12 text-center transition-all duration-300 ${formData.images.length >= 6
+                  ? "border-gray-300 bg-gray-50"
+                  : "border-blue-300 bg-blue-50 hover:border-blue-400 hover:bg-blue-100"
+                  }`}
               >
                 <input
                   type="file"
@@ -632,18 +679,16 @@ const fetchCategories = async () => {
 
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 sm:mb-6 ${
-                      formData.images.length >= 6
-                        ? "bg-gray-200"
-                        : "bg-gradient-to-r from-blue-400 to-indigo-500"
-                    }`}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 sm:mb-6 ${formData.images.length >= 6
+                      ? "bg-gray-200"
+                      : "bg-gradient-to-r from-blue-400 to-indigo-500"
+                      }`}
                   >
                     <svg
-                      className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                        formData.images.length >= 6
-                          ? "text-gray-400"
-                          : "text-white"
-                      }`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 ${formData.images.length >= 6
+                        ? "text-gray-400"
+                        : "text-white"
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -658,11 +703,10 @@ const fetchCategories = async () => {
                   </div>
 
                   <h3
-                    className={`text-lg sm:text-xl font-bold mb-2 ${
-                      formData.images.length >= 6
-                        ? "text-gray-500"
-                        : "text-gray-800"
-                    }`}
+                    className={`text-lg sm:text-xl font-bold mb-2 ${formData.images.length >= 6
+                      ? "text-gray-500"
+                      : "text-gray-800"
+                      }`}
                   >
                     {formData.images.length >= 6
                       ? "Maximum images reached"
@@ -675,20 +719,18 @@ const fetchCategories = async () => {
 
                   <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <span
-                      className={`px-3 py-1 rounded-full ${
-                        formData.images.length >= 2
-                          ? "bg-green-100 text-green-700"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
+                      className={`px-3 py-1 rounded-full ${formData.images.length >= 2
+                        ? "bg-green-100 text-green-700"
+                        : "bg-orange-100 text-orange-700"
+                        }`}
                     >
                       {formData.images.length}/6 images
                     </span>
                     <span
-                      className={`px-3 py-1 rounded-full ${
-                        formData.images.length >= 2
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                      className={`px-3 py-1 rounded-full ${formData.images.length >= 2
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {formData.images.length >= 2
                         ? "✓ Minimum met"
@@ -824,11 +866,10 @@ const fetchCategories = async () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || userLoading || formData.images.length < 2}
-                className={`w-full py-4 sm:py-5 px-6 sm:px-8 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 transform ${
-                  loading || userLoading || formData.images.length < 2
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-500 via-purple-500 to-teal-500 text-white hover:from-blue-600 hover:via-purple-600 hover:to-teal-600 hover:shadow-2xl hover:-translate-y-1 active:transform-none"
-                }`}
+                className={`w-full py-4 sm:py-5 px-6 sm:px-8 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 transform ${loading || userLoading || formData.images.length < 2
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-500 via-purple-500 to-teal-500 text-white hover:from-blue-600 hover:via-purple-600 hover:to-teal-600 hover:shadow-2xl hover:-translate-y-1 active:transform-none"
+                  }`}
               >
                 {loading ? (
                   <div className="flex items-center justify-center">

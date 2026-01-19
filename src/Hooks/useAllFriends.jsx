@@ -12,7 +12,7 @@ const useAllFriends = () => {
       if (!token) {
         return [];
       }
-      const res = await axios.get("http://localhost:3000/all-friends", {
+      const res = await axios.get("https://fly-book-server-lzu4.onrender.com/all-friends", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -23,7 +23,10 @@ const useAllFriends = () => {
       // Handle error here
       console.error("Error fetching friends:", err);
     },
-    retry: 2, // retry the query twice in case of failure
+    retry: 1, // Reduced retry from 2 to 1 for faster failure
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   return { allFriends, refetch, isLoading, isError, error };

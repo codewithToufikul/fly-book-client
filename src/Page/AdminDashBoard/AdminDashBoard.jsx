@@ -10,12 +10,14 @@ import { Link, NavLink, Outlet } from "react-router";
 import logo from "../../assets/logo.png";
 import { TiThMenuOutline } from "react-icons/ti";
 import { BsFilePost } from "react-icons/bs";
-import { FaFilePdf, FaHome } from "react-icons/fa";
+import { FaFilePdf, FaHome, FaUsers, FaUserPlus } from "react-icons/fa";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { BiSolidBookAdd } from "react-icons/bi";
 import { GrChannel } from "react-icons/gr";
 import { PiChalkboardTeacher } from "react-icons/pi";
 import { MdOutlineBookmarkAdd } from "react-icons/md";
+import { RiUserCommunityLine } from "react-icons/ri";
+import { MapPin } from "lucide-react";
 
 const AdminDashBoard = () => {
   return (
@@ -51,8 +53,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/add-post"}
               >
@@ -68,8 +70,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/all-posts"}
               >
@@ -85,8 +87,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/add-category"}
               >
@@ -102,8 +104,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/thesis-post"}
               >
@@ -119,8 +121,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/add-ai-post"}
               >
@@ -136,8 +138,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/add-pdf"}
               >
@@ -153,8 +155,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/all-pdf-books"}
               >
@@ -170,8 +172,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/all-users"}
               >
@@ -187,8 +189,25 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/referral-history"}
+              >
+                <span className="text-xl lg:text-2xl">
+                  <FaUserPlus />
+                </span>
+                Referral History
+              </NavLink>
+            </li>
+            <li className="">
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/all-opinion"}
               >
@@ -204,8 +223,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/manage-organizations"}
               >
@@ -221,8 +240,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/organizations-controller"}
               >
@@ -238,8 +257,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/events-management"}
               >
@@ -255,8 +274,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/manage-channels"}
               >
@@ -266,21 +285,21 @@ const AdminDashBoard = () => {
                 Channel Manage
               </NavLink>
             </li>
-                    <li>
+            <li>
               <NavLink
                 className={({ isActive, isPending }) =>
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/add-course"}
               >
                 <span className="text-lg">
                   <MdOutlineBookmarkAdd />
                 </span>
-               Add Course
+                Add Course
               </NavLink>
             </li>
             <li>
@@ -289,8 +308,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/manage-course"}
               >
@@ -306,8 +325,8 @@ const AdminDashBoard = () => {
                   isActive
                     ? "btn flex justify-start bg-gray-200"
                     : isPending
-                    ? "pending"
-                    : "btn flex justify-start bg-white"
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
                 }
                 to={"/dashboard/transfer-history"}
               >
@@ -315,6 +334,74 @@ const AdminDashBoard = () => {
                   <VscGitPullRequestCreate />
                 </span>
                 Books Transfer History
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/manage-communnity"}
+              >
+                <span className="text-lg">
+                  <RiUserCommunityLine />
+                </span>
+                Community Mnagaement
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/manage-locations"}
+              >
+                <span className="text-lg">
+                  <MapPin />
+                </span>
+                Manage Locations
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/wallate-shop"}
+              >
+                <span className="text-lg">
+                  <MapPin />
+                </span>
+                Wallate Shop
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className={({ isActive, isPending }) =>
+                  isActive
+                    ? "btn flex justify-start bg-gray-200"
+                    : isPending
+                      ? "pending"
+                      : "btn flex justify-start bg-white"
+                }
+                to={"/dashboard/all-coin-transfers"}
+              >
+                <span className="text-lg">
+                  <TbArrowsTransferUpDown />
+                </span>
+                All Coin Transfers
               </NavLink>
             </li>
             <li className=" mt-5 border-t-2 pt-3">

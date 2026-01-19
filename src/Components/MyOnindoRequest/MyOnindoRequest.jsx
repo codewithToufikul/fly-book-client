@@ -4,14 +4,24 @@ import useUser from "../../Hooks/useUser";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import { Link } from "react-router";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import createSocket from "../../utils/socket";
 
 const MyOnindoRequest = () => {
   const { allOnindoBooks, refetch, isLoading } = useAllOnindoBook();
   const { user, loading } = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
-  const socket = io("https://flybook.com.bd");
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -41,15 +51,17 @@ const MyOnindoRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: requestBy,
-          type: "bookReqClO",
-          notifyText: "Cancel Your Book Request",
-          roomId: [requestBy],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: requestBy,
+            type: "bookReqClO",
+            notifyText: "Cancel Your Book Request",
+            roomId: [requestBy],
+          });
+        }
         refetch();
       }
     } catch (error) {
@@ -95,15 +107,17 @@ const MyOnindoRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book Transfered!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: requestBy,
-          type: "bookReqTns",
-          notifyText: "Transfer a Book",
-          roomId: [requestBy],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: requestBy,
+            type: "bookReqTns",
+            notifyText: "Transfer a Book",
+            roomId: [requestBy],
+          });
+        }
         refetch();
       }
     } catch (error) {

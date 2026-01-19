@@ -13,16 +13,20 @@ import logout from "../../assets/logout.png";
 import useUser from "../../Hooks/useUser";
 import { Link, useNavigate } from "react-router";
 import toast from "react-hot-toast";
-import loadingLogo from "../../assets/load.webp"
-import organization from "../../assets/partners.png"
-import near from "../../assets/near.png"
-import about from "../../assets/information.png"
-import disclaimer from "../../assets/disclaimer.png"
-import pricacy from "../../assets/protection.png"
-import terms from "../../assets/terms-and-conditions.png"
+import { useQueryClient } from "@tanstack/react-query";
+import loadingLogo from "../../assets/load.webp";
+import organization from "../../assets/partners.png";
+import near from "../../assets/near.png";
+import about from "../../assets/information.png";
+import disclaimer from "../../assets/disclaimer.png";
+import pricacy from "../../assets/protection.png";
+import terms from "../../assets/terms-and-conditions.png";
+import socialres from "../../assets/social-worker.png"
+import jobs from "../../assets/job-search.png"
 const Categories = () => {
   const { user, loading: isLoading, refetch } = useUser();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   if (isLoading) {
     return (
@@ -35,9 +39,19 @@ const Categories = () => {
     );
   }
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("notify");
-    refetch();
+    // Clear all localStorage data
+    localStorage.clear();
+
+    // Clear React Query cache
+    queryClient.clear();
+
+    // Navigate to login
+    navigate("/login");
+
+    // Force reload to ensure complete state reset
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const handleUpcoming = () => {
@@ -72,7 +86,7 @@ const Categories = () => {
             Login Now
           </Link>
         )}
-        
+
         <div className="overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
           <ul className="space-y-1">
             <li>
@@ -97,17 +111,17 @@ const Categories = () => {
                 <h2 className="text-base font-medium">Library</h2>
               </Link>
             </li>
-            <li onClick={handleUpcoming}>
+            <Link to={"/community"}>
               <div className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
                 <div className="w-7">
                   <img className="w-full" src={group} alt="" />
                 </div>
-                <h2 className="text-base font-medium">Groups</h2>
+                <h2 className="text-base font-medium">Community</h2>
               </div>
-            </li>
+            </Link>
             <li>
               <Link
-                to={"https://bookoffen.com/"}
+                to={"/marketplace"}
                 className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
               >
                 <div className="w-7">
@@ -128,7 +142,10 @@ const Categories = () => {
               </Link>
             </li>
             <li>
-              <Link to={'/e-learning'} className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+              <Link
+                to={"/e-learning"}
+                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+              >
                 <div className="w-7">
                   <img className="w-full" src={elng} alt="" />
                 </div>
@@ -136,7 +153,10 @@ const Categories = () => {
               </Link>
             </li>
             <li>
-              <Link to={'/channels'} className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+              <Link
+                to={"/channels"}
+                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+              >
                 <div className="w-7">
                   <img className="w-full" src={channel} alt="" />
                 </div>
@@ -144,7 +164,32 @@ const Categories = () => {
               </Link>
             </li>
             <li>
-              <Link to={'/audio-book'} className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
+              <Link
+                to={"/social-responsibility"}
+                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+              >
+                <div className="w-7">
+                  <img className="w-full" src={socialres} alt="" />
+                </div>
+                <h2 className="text-base font-medium">Social Responsibility</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/jobs"}
+                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+              >
+                <div className="w-7">
+                  <img className="w-full" src={jobs} alt="" />
+                </div>
+                <h2 className="text-base font-medium">Jobs</h2>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={"/audio-book"}
+                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
+              >
                 <div className="w-7">
                   <img className="w-full" src={audioBook} alt="" />
                 </div>
@@ -167,7 +212,9 @@ const Categories = () => {
                 <div className="w-7">
                   <img className="w-full" src={organization} alt="" />
                 </div>
-                <h2 className="text-base font-medium">Unlocking your potential with-</h2>
+                <h2 className="text-base font-medium">
+                  Unlocking your potential with-
+                </h2>
               </Link>
             </li>
             <li onClick={handleUpcoming}>
@@ -208,7 +255,7 @@ const Categories = () => {
                 <h2 className="text-base font-medium">About Us</h2>
               </Link>
             </li>
-              <li>
+            <li>
               <Link
                 to={"/privacy-policy"}
                 className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
@@ -220,9 +267,7 @@ const Categories = () => {
               </Link>
             </li>
             <li onClick={handleUpcoming}>
-              <Link
-                className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer"
-              >
+              <Link className="flex items-center gap-3 hover:bg-gray-200 w-[300px] hover:shadow-md rounded-md px-5 py-3 cursor-pointer">
                 <div className="w-7">
                   <img className="w-full" src={disclaimer} alt="" />
                 </div>

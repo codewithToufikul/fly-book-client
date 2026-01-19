@@ -13,7 +13,7 @@ const useAllPdfBook = () => {
   } = useQuery({
     queryKey: ["pdfBooks"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:3000/pdf-books", {
+      const res = await axios.get("https://fly-book-server-lzu4.onrender.com/pdf-books", {
       });
       return res.data;
     },

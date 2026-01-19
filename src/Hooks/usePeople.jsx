@@ -10,7 +10,7 @@ const usePeople = () => {
       if (!token) {
         return [];
       }
-      const res = await axios.get("http://localhost:3000/peoples", {
+      const res = await axios.get("https://fly-book-server-lzu4.onrender.com/peoples", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -21,7 +21,10 @@ const usePeople = () => {
       // Handle any errors that occur during the fetching process
       console.error("Error fetching peoples:", err);
     },
-    retry: 2, // retry 2 times in case of failure
+    retry: 1, // Reduced retry from 2 to 1 for faster failure
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 5 * 60 * 1000, 
+    refetchOnWindowFocus: true, // Refetch when window is focused
   });
 
   return { peoples, refetch, isLoading, isError, error };

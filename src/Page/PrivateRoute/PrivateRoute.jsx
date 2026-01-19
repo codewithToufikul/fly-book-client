@@ -1,12 +1,24 @@
 import { Navigate } from "react-router";
 import useUser from "../../Hooks/useUser";
 import { jwtDecode } from "jwt-decode";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 
 const PrivateRoute = ({ children }) => {
   const [showModal, setShowModal] = useState(false);
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState(null);
   const { user, loading: isLoading } = useUser();
+
+  // Safely get token from localStorage
+  useEffect(() => {
+    try {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
+    } catch (error) {
+      console.error("Error accessing localStorage:", error);
+      setToken(null);
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -20,6 +32,7 @@ const PrivateRoute = ({ children }) => {
 
   const userNumber = user?.number;
   const isTokenValid = (token, userNumber) => {
+    if (!token) return false;
     try {
       const decodedToken = jwtDecode(token); 
       const { exp, number } = decodedToken; 
@@ -61,7 +74,21 @@ const PrivateRoute = ({ children }) => {
     );
   }
 
-  return children;
+  // Wrap children in Suspense to handle lazy loading properly
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-full border-t-8 border-b-8 border-gray-200"></div>
+            <div className="absolute top-0 left-0 h-24 w-24 rounded-full border-t-8 border-b-8 border-blue-500 animate-spin"></div>
+          </div>
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
 };
 
 export default PrivateRoute;

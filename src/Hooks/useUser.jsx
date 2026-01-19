@@ -8,7 +8,7 @@ const fetchUserProfile = async () => {
   // ✅ Token na thakle, null return korbo — kono exception throw na
   if (!token) return null;
 
-  const response = await fetch("http://localhost:3000/profile", {
+  const response = await fetch("https://fly-book-server-lzu4.onrender.com/profile", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -42,7 +42,6 @@ const useUser = () => {
     queryKey: ["userProfile"],
     queryFn: fetchUserProfile,
     retry: false,
-    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

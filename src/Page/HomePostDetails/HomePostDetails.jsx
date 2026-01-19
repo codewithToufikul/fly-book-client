@@ -53,7 +53,7 @@ const HomePostDetails = () => {
       try {
         setLoading(true);
         const response = await fetch(
-          `http://localhost:3000/all-home-post/${id}`
+          `https://fly-book-server-lzu4.onrender.com/all-home-post/${id}`
         );
         if (!response.ok) {
           throw new Error("Post not found");
@@ -210,7 +210,7 @@ const HomePostDetails = () => {
       const endpoint = isLiked ? "/admin-post/unlike" : "/admin-post/like";
 
       const { data } = await axiosPublic.post(
-        `https://api.flybook.com.bd${endpoint}`,
+        `https://fly-book-server-lzu4.onrender.com${endpoint}`,
         { postId }
       );
 
@@ -242,7 +242,7 @@ const HomePostDetails = () => {
       setSubmittingComment(true);
 
       const response = await axiosPublic.post(
-        `http://localhost:3000/admin-post/comment`,
+        `https://fly-book-server-lzu4.onrender.com/admin-post/comment`,
         {
           postId: id,
           comment: newComment.trim(),

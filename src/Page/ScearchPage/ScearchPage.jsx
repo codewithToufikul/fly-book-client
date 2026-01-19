@@ -15,7 +15,8 @@ const ScearchPage = () => {
   const token = localStorage.getItem("token");
   const [expandedPosts, setExpandedPosts] = useState({});
   const location = useLocation();
-  const { searchResults } = location.state || {};
+  const { searchResults, searchQuery: initialSearchQuery } = location.state || {};
+  const [currentSearchQuery, setCurrentSearchQuery] = useState(initialSearchQuery || "");
   const [users, setUsers] = useState([]);
   const [opinions, setOpinions] = useState([]);
   const [books, setBooks] = useState([]);
@@ -92,11 +93,22 @@ const ScearchPage = () => {
   const sortSearch = (category) => {
     setSearchCate(category)
   }; 
-  console.log(searchResults)
+  console.log("searchResults", searchResults)
   return (
     <div>
       <Navbar />
       <div className="container mx-auto p-4">
+        {/* Search Query Display */}
+        {currentSearchQuery && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Search results for: <span className="text-blue-600">"{currentSearchQuery}"</span>
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Found {(peoples?.length || 0) + (opinions?.length || 0) + (books?.length || 0) + (onindoBooks?.length || 0) + (pdfBooks?.length || 0)} results in website
+            </p>
+          </div>
+        )}
         <div className="border-b-2 pb-4 shadow-sm mb-3">
           <ul className="flex items-center justify-center lg:justify-start gap-2 flex-wrap">
             <li onClick={() => sortSearch("all")} className={`text-xs lg:text-lg p-2 bg-blue-50 font-semibold cursor-pointer rounded-md ${searchCate === "all" ? "bg-gray-200" : ""}`}>All</li>
@@ -638,10 +650,21 @@ const ScearchPage = () => {
           !opinions?.length &&
           !books?.length &&
           !onindoBooks?.length &&
-          !pdfBooks?.length) && (
-          <div className="text-center py-8">
-            <p className="text-xl text-gray-600">No results found for your query.</p>
-            <p className="text-sm text-gray-500 mt-2">Try searching with different keywords or filters.</p>
+          !pdfBooks?.length &&
+          !searchResults?.aiResult) && (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <div className="mb-4">
+              <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-700 mb-2">No results found</h3>
+            <p className="text-gray-500 mb-4">We couldn't find anything matching "{currentSearchQuery}"</p>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>💡 Try different keywords</p>
+              <p>💡 Check your spelling</p>
+              <p>💡 Use more general terms</p>
+            </div>
           </div>
         )}
       </div>

@@ -18,14 +18,14 @@ function FullMessageView() {
                 setLoading(true);
                 
                 // Fetch channel data
-                const channelResponse = await fetch(`http://localhost:3000/api/channels/${channelId}`);
+                const channelResponse = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}`);
                 if (!channelResponse.ok) throw new Error('Failed to fetch channel data');
                 const channelData = await channelResponse.json();
                 console.log(channelData)
                 setChannelData(channelData);
 
                 // Fetch specific message
-                const messageResponse = await fetch(`http://localhost:3000/api/channels/${channelId}/messages/${messageId}`);
+                const messageResponse = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}/messages/${messageId}`);
                 if (!messageResponse.ok) throw new Error('Message not found');
                 const messageData = await messageResponse.json();
                 console.log(messageData)

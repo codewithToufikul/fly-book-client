@@ -42,7 +42,7 @@ function ChannelBox() {
     useEffect(() => {
         const fetchChannelData = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/api/channels/${channelId}`);
+                const response = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}`);
                 const data = await response.json();
                 setChannelData(data);
             } catch (error) {
@@ -61,7 +61,7 @@ function ChannelBox() {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages`);
+                const response = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}/messages`);
                 const data = await response.json();
                 setMessages(data.messages || []);
             } catch (error) {
@@ -146,7 +146,7 @@ function ChannelBox() {
                 timestamp: new Date().toISOString()
             };
 
-            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages`, {
+            const response = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ function ChannelBox() {
         if (!editText.trim()) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages/${messageId}`, {
+            const response = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}/messages/${messageId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ function ChannelBox() {
         if (!confirm('Are you sure you want to delete this message?')) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/api/channels/${channelId}/messages/${messageId}`, {
+            const response = await fetch(`https://fly-book-server-lzu4.onrender.com/api/channels/${channelId}/messages/${messageId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`

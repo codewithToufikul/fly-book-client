@@ -4,7 +4,8 @@ import useUser from "../../Hooks/useUser";
 import useAllBook from "../../Hooks/useAllBook";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import createSocket from "../../utils/socket";
 
 const UserLibraryBook = () => {
   const { userId } = useParams();
@@ -12,7 +13,16 @@ const UserLibraryBook = () => {
   const { allBooks, isLoading, refetch } = useAllBook();
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
-  const socket = io("https://flybook.com.bd");
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
 
   if (loading || isLoading) {
     return (
@@ -52,15 +62,17 @@ const UserLibraryBook = () => {
       if (response.status === 200) {
         toast.success("Book request submitted successfully!");
         refetch()
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: userId,
-          type: "bookReq",
-          notifyText: "Send a Book Request",
-          roomId: [userId],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: userId,
+            type: "bookReq",
+            notifyText: "Send a Book Request",
+            roomId: [userId],
+          });
+        }
       }
     } catch (error) {
       console.error("Error while requesting the book:", error);
@@ -104,15 +116,17 @@ const UserLibraryBook = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: userId,
-          type: "bookReqCl",
-          notifyText: "Cancel Book Request",
-          roomId: [userId],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: userId,
+            type: "bookReqCl",
+            notifyText: "Cancel Book Request",
+            roomId: [userId],
+          });
+        }
         refetch()
       }
     } catch (error) {

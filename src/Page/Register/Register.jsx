@@ -60,6 +60,7 @@ const Register = () => {
     const email = formData.get("email");
     const number = formData.get("number");
     const password = formData.get("password");
+    const referrerUsername = formData.get("referrerUsername");
 
     const numberString = number.toString();
 
@@ -87,10 +88,11 @@ const Register = () => {
       number,
       password,
       userLocation,
+      referrerUsername: referrerUsername || "",
     };
 
     try {
-      const res = await axios.post("http://localhost:3000/users/register", userInfo);
+      const res = await axios.post("https://fly-book-server-lzu4.onrender.com/users/register", userInfo);
 
       if (res.data.success) {
         toast.success("Registered successfully!");
@@ -110,7 +112,7 @@ const Register = () => {
 
 
   return (
-    <div className="font-[sans-serif] bg-white max-w-4xl flex items-center mx-auto md:h-screen p-4 justify-center flex-col">
+    <div className="font-[sans-serif] bg-white max-w-4xl flex items-center mx-auto p-4 justify-center flex-col">
       <img className="mb-5 w-[120px] lg:w-[230px]" src={logo} alt="Logo" />
       <div className="grid md:grid-cols-3 items-center shadow-[0_2px_10px_-3px_rgba(6,81,237,0.3)] rounded-xl overflow-hidden">
         {/* Left Section */}
@@ -209,6 +211,24 @@ const Register = () => {
                 />
               </div>
               {passErr && <p className="text-sm text-red-500">{passErr}</p>}
+            </div>
+
+            {/* Referrer Username Field (Optional) */}
+            <div>
+              <label className="text-gray-800 text-sm mb-2 block">
+                Affiliate ID <span className="text-gray-500 text-xs">(Optional)</span>
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  name="referrerUsername"
+                  type="text"
+                  className="text-gray-800 bg-white border border-gray-300 w-full text-sm px-4 py-2.5 rounded-md outline-blue-500"
+                  placeholder="Enter affiliate ID (if any)"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                If you have an affiliate ID, enter it here
+              </p>
             </div>
 
             {/* Terms and Conditions */}

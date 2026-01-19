@@ -30,7 +30,7 @@ function Channels() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('http://localhost:3000/api/channels')
+      const res = await fetch('https://fly-book-server-lzu4.onrender.com/api/channels')
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`)
@@ -165,7 +165,7 @@ function Channels() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/channels', {
+      const res = await fetch('https://fly-book-server-lzu4.onrender.com/api/channels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

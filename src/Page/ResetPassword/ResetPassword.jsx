@@ -23,7 +23,7 @@ const ResetPassword = () => {
     try {
       // Send password reset request
       const res = await axios.post(
-        `http://localhost:3000/reset-password/${id}/${token}`,
+        `https://fly-book-server-lzu4.onrender.com/reset-password/${id}/${token}`,
         { password }
       );
       setLoading(false);

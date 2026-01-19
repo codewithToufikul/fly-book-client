@@ -8,7 +8,7 @@ function AdminEManage() {
     useEffect(() => {
         const fetchOrganizations = async () => {
             try {
-                const response = await fetch("http://localhost:3000/organizations/activities");
+                const response = await fetch("https://fly-book-server-lzu4.onrender.com/organizations/activities");
                 const result = await response.json();
 
                 if (result.success) {

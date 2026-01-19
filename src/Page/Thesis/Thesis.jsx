@@ -8,7 +8,7 @@ const Thesis = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["adminPostData"],
     queryFn: () =>
-      fetch("http://localhost:3000/thesis").then((res) => res.json()),
+      fetch("https://fly-book-server-lzu4.onrender.com/thesis").then((res) => res.json()),
   });
 
   if (isLoading) {

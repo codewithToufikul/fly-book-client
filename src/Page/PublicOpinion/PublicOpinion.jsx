@@ -10,7 +10,8 @@ import useUser from "../../Hooks/useUser";
 import { FaRegHeart, FaFilePdf } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import Linkify from "linkify-react";
+import Linkify from "react-linkify";
+import send from "../../assets/sent.png";
 
 const PublicOpinion = () => {
   const { user } = useUser();
@@ -78,6 +79,17 @@ const PublicOpinion = () => {
     toast.error("Features Upcoming !");
   };
 
+  const handleShare = async (postId) => {
+    const postUrl = `${window.location.origin}/opinion-post/${postId}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast.success("Post Link Copied!");
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to copy link.");
+    }
+  };
+
   const truncateText = (text, maxLength) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + "...";
@@ -132,14 +144,12 @@ const PublicOpinion = () => {
                           <h1 className="text-lg lg:text-xl font-medium">
                             {post.userName}
                           </h1>
-                          <p className="text-xs text-slate-400 lg:text-sm">{`${
-                            post.date
-                          } at ${
-                            post.time.slice(0, -6) + post.time.slice(-3)
-                          }`}</p>
+                          <p className="text-xs text-slate-400 lg:text-sm">{`${post.date
+                            } at ${post.time.slice(0, -6) + post.time.slice(-3)
+                            }`}</p>
                         </div>
                       </Link>
-                      
+
                       {/* Truncated post content */}
                       <div className="text-sm lg:text-lg whitespace-pre-wrap">
                         <span className="block sm:hidden">
@@ -212,7 +222,7 @@ const PublicOpinion = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     {post.image && (
                       <figure className="w-full h-full overflow-hidden flex justify-center items-center bg-gray-100">
                         <img
@@ -247,9 +257,10 @@ const PublicOpinion = () => {
                         </p>
                       </div>
                       <div
-                        onClick={handleUpcoming}
+                        onClick={() => handleShare(post._id)}
                         className="flex items-center gap-1 cursor-pointer"
                       >
+                        <img className="w-7 shadow-sm" src={send} alt="share" />
                         <p className="text-sm lg:text-lg font-medium">Share</p>
                       </div>
                     </div>

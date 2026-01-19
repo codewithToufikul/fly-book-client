@@ -23,7 +23,7 @@ const Login = () => {
     const password = formData.get("password");
 
     try {
-      const { data } = await axios.post("http://localhost:3000/users/login", {
+      const { data } = await axios.post("https://fly-book-server-lzu4.onrender.com/users/login", {
         number,
         password,
       });

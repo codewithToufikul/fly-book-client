@@ -44,9 +44,21 @@ const MyLibraryBook = () => {
               icon: "success",
             });
             refetch();
+          } else {
+            Swal.fire({
+              title: "Error!",
+              text: res.data.message || "Failed to remove book",
+              icon: "error",
+            });
           }
         } catch (error) {
           console.log(error);
+          const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to remove book. Only the original owner can delete their books.";
+          Swal.fire({
+            title: "Error!",
+            text: errorMessage,
+            icon: "error",
+          });
         }
       }
     });

@@ -20,7 +20,7 @@ const NearbyBooks = () => {
   // নিকটবর্তী বইগুলির ডেটা ফেচ করুন
   const fetchNearbyBooks = async (longitude, latitude) => {
     try {
-      const response = await axios.get("http://localhost:3000/books/nearby", {
+      const response = await axios.get("https://fly-book-server-lzu4.onrender.com/books/nearby", {
         params: {
           longitude,
           latitude,
@@ -66,7 +66,7 @@ const NearbyBooks = () => {
 
       // Send to server
       const response = await axios.put(
-        "http://localhost:3000/profile/updateDetails/location",
+        "https://fly-book-server-lzu4.onrender.com/profile/updateDetails/location",
         updateDetails,
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -32,7 +32,7 @@ const MyOnindoAllBook = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await axiosPublic.delete(`http://localhost:3000/onindo/delete/${bookId}`);
+          const res = await axiosPublic.delete(`/onindo/delete/${bookId}`);
           if (res.data.success) {
             Swal.fire("Removed!", "Your book has been removed!", "success");
             refetch();
@@ -40,7 +40,9 @@ const MyOnindoAllBook = () => {
             Swal.fire("Error", res.data.message || "An error occurred", "error");
           }
         } catch (error) {
-          Swal.fire("Error", error.response?.data?.error || "An error occurred", "error");
+          console.log(error);
+          const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to remove book. Only the original owner can delete their books.";
+          Swal.fire("Error", errorMessage, "error");
         }
       }
     });

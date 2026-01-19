@@ -11,7 +11,7 @@ const SocialOrganizations = () => {
   useEffect(() => {
     const fetchSocialOrganizations = async () => {
       try {
-        const response = await fetch("http://localhost:3000/social-organization");
+        const response = await fetch("https://fly-book-server-lzu4.onrender.com/social-organization");
         const result = await response.json();
         if (result.success) {
           setOrganizations(result.data);

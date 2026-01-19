@@ -6,6 +6,8 @@ import Navbar from "../../Components/Navbar/Navbar";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { BiMessageDetail } from "react-icons/bi";
+import useUser from "../../Hooks/useUser";
+import { useSocket } from "../../contexts/SocketContext";
 
 const ChatList = () => {
   const [chatUsers, setChatUsers] = useState([]);
@@ -15,6 +17,8 @@ const ChatList = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
+  const { user } = useUser();
+  const socket = useSocket(); // Use global socket
 
   const sortChatsByLatestMessage = (chats) => {
     return [...chats].sort((a, b) => {
@@ -54,6 +58,74 @@ const ChatList = () => {
     fetchChatUsers();
   }, []);
 
+  // Mark all messages as read when chat list page is visited
+  useEffect(() => {
+    const markAllMessagesAsRead = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Get all chat users and mark their messages as read
+        const res = await axiosPublic.get("/api/chat-users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (res.data.success && res.data.users) {
+          // Mark messages from all chat users as read
+          const markPromises = res.data.users.map(async (chatUser) => {
+            try {
+              await axiosPublic.put("/api/messages/mark-read", {
+                userId: user.id,
+                senderId: chatUser._id,
+              });
+            } catch (error) {
+              console.error(`Error marking messages from ${chatUser._id} as read:`, error);
+            }
+          });
+          
+          await Promise.all(markPromises);
+          
+          // Update message count in Navbar and DownNav
+          window.dispatchEvent(new CustomEvent('resetMessageCount'));
+        }
+      } catch (error) {
+        console.error("Error marking messages as read:", error);
+      }
+    };
+    
+    markAllMessagesAsRead();
+  }, [user?.id, axiosPublic, token]);
+
+  // Listen for user online/offline status updates using global socket
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for user online/offline status updates
+    socket.on("userOnline", (data) => {
+      setChatUsers(prev => 
+        prev.map(chatUser => 
+          chatUser._id === data.userId 
+            ? { ...chatUser, isOnline: true }
+            : chatUser
+        )
+      );
+    });
+
+    socket.on("userOffline", (data) => {
+      setChatUsers(prev => 
+        prev.map(chatUser => 
+          chatUser._id === data.userId 
+            ? { ...chatUser, isOnline: false, lastSeen: new Date() }
+            : chatUser
+        )
+      );
+    });
+
+    return () => {
+      socket.off("userOnline");
+      socket.off("userOffline");
+    };
+  }, [socket]);
+
   const handleDeleteClick = (chat) => {
     setSelectedChat(chat);
     setShowDeleteModal(true);
@@ -66,7 +138,7 @@ const ChatList = () => {
     try {
       const response = await axiosPublic({
         method: 'DELETE',
-        url: `http://localhost:3000/api/delete-conversation/${selectedChat._id}`,
+        url: `https://fly-book-server-lzu4.onrender.com/api/delete-conversation/${selectedChat._id}`,
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -128,12 +200,17 @@ const ChatList = () => {
                     to={`/chats/${cUser._id}`}
                     className="flex items-center gap-4 flex-1"
                   >
-                    <div className="w-12 h-12 rounded-full ring-2 ring-offset-2 ring-blue-100">
+                    <div className="relative w-12 h-12 rounded-full ring-2 ring-offset-2 ring-blue-100">
                       <img
                         className="w-full h-full object-cover rounded-full"
                         src={cUser.profileImage}
                         alt={cUser.name}
                       />
+                      {cUser.isOnline ? (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      ) : (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <h1 className="text-base lg:text-lg font-medium text-gray-800">

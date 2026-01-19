@@ -9,9 +9,9 @@ const MNavbar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const { cartItems, isLoading } = useCart();
 
-  if (isLoading) {
-    return <p>Loading</p>;
-  }
+  // Remove early return loading as it hides the entire navbar
+  // const { cartItems, isLoading } = useCart();
+  // if (isLoading) return <p>Loading</p>;
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -140,10 +140,9 @@ const MNavbar = ({ sidebarOpen, setSidebarOpen }) => {
             <NavLink
               to={"/market-user"}
               className={({ isActive }) =>
-                `flex items-center text-2xl space-x-1 transition-colors ${
-                  isActive
-                    ? "text-teal-700"
-                    : "text-gray-600 hover:text-teal-700"
+                `flex items-center text-2xl space-x-1 transition-colors ${isActive
+                  ? "text-teal-700"
+                  : "text-gray-600 hover:text-teal-700"
                 }`
               }
             >
@@ -154,10 +153,9 @@ const MNavbar = ({ sidebarOpen, setSidebarOpen }) => {
             <NavLink
               to={"/cart"}
               className={({ isActive }) =>
-                `relative flex items-center space-x-1 transition-colors ${
-                  isActive
-                    ? "text-teal-700"
-                    : "text-gray-600 hover:text-teal-700"
+                `relative flex items-center space-x-1 transition-colors ${isActive
+                  ? "text-teal-700"
+                  : "text-gray-600 hover:text-teal-700"
                 }`
               }
             >

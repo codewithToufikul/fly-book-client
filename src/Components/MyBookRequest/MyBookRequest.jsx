@@ -5,14 +5,24 @@ import usePublicAxios from "../../Hooks/usePublicAxios";
 import { MdAvTimer } from "react-icons/md";
 import toast from "react-hot-toast";
 import { Link } from "react-router";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import createSocket from "../../utils/socket";
 
 const MyBookRequest = () => {
   const { allBooks, isLoading, refetch } = useAllBook();
   const { user, loading } = useUser();
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
-  const socket = io("https://flybook.com.bd");
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -27,7 +37,7 @@ const MyBookRequest = () => {
   const requestBooks = myBooks.filter((book) => book.transfer === "pending" || book.transfer === "accept");
   
 
-  const handleRequestCancel = async (bookId) => {
+  const handleRequestCancel = async (bookId, requestBy) => {
     if (!bookId) {
       return toast.error("Invalid book ID. Please try again.");
     }
@@ -43,15 +53,17 @@ const MyBookRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: requestBy,
-          type: "bookReqCl",
-          notifyText: "Cancel your Book Request",
-          roomId: [requestBy],
-        });
+        if (socket && requestBy) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: requestBy,
+            type: "bookReqCl",
+            notifyText: "Cancel your Book Request",
+            roomId: [requestBy],
+          });
+        }
         refetch();
       }
     } catch (error) {
@@ -95,15 +107,17 @@ const MyBookRequest = () => {
 
       if (response.status === 200) {
         toast.success("Book request Accept!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: requestBy,
-          type: "bookReqAc",
-          notifyText: "Accept Your Book Request",
-          roomId: [requestBy],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: requestBy,
+            type: "bookReqAc",
+            notifyText: "Accept Your Book Request",
+            roomId: [requestBy],
+          });
+        }
         refetch();
       }
     } catch (error) {
@@ -152,15 +166,17 @@ const MyBookRequest = () => {
       if (response.status === 200) {
         toast.success("Book Transfered!");
         refetch();
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: requestBy,
-          type: "bookReqAc",
-          notifyText: "Transfer your Book",
-          roomId: [requestBy],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: requestBy,
+            type: "bookReqAc",
+            notifyText: "Transfer your Book",
+            roomId: [requestBy],
+          });
+        }
       }
     } catch (error) {
       console.error("Error while transfer the book:", error);
@@ -261,7 +277,7 @@ const MyBookRequest = () => {
                 </button>
                 }
                 <button
-                  onClick={() => handleRequestCancel(book._id)}
+                  onClick={() => handleRequestCancel(book._id, book.requestBy)}
                   className="w-full py-2 text-sm lg:text-base px-4 bg-red-400 text-white rounded-full hover:bg-red-500"
                 >
                   Cancel

@@ -8,7 +8,7 @@ import useUser from "../../Hooks/useUser";
 import toast from "react-hot-toast";
 import { MdPersonPinCircle } from "react-icons/md";
 import imageCompression from "browser-image-compression";
-import { io } from "socket.io-client";
+import { useSocket } from "../../contexts/SocketContext";
 
 const DownNav = () => {
   const { user } = useUser();
@@ -21,8 +21,9 @@ const DownNav = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const IMG_BB_API_KEY = import.meta.env.VITE_IMAGE_HOSTING_KEY;
-  const [socket, setSocket] = useState(null);
+  const socket = useSocket(); // Use global socket
   const [notification, setNotification] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // Only notification count
   const [pdf, setPdf] = useState(null);
   const [pdfUrl, setPdfUrl] = useState("");
   const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -36,33 +37,85 @@ const DownNav = () => {
     setIsOpen(!isOpen);
   };
 
+  // Load initial unread notification count from database
   useEffect(() => {
-    const notify = JSON.parse(localStorage.getItem("notify")) || [];
-    setNotification(notify);
-  }, []);
+    const loadUnreadCount = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Fetch unread notification count
+        const notifyRes = await axiosPublic.get(`/api/notifications/${user.id}/unread-count`);
+        const notificationCount = notifyRes.data.unreadCount || 0;
+        
+        // Fetch unread message count
+        const messageRes = await axiosPublic.get(`/api/messages/${user.id}/unread-count`);
+        const messageCount = messageRes.data.unreadCount || 0;
+        
+        // Set notification count only (not message count)
+        setUnreadNotificationCount(notificationCount);
+        
+        // Get all notifications for display
+        const allNotifyRes = await axiosPublic.get(`/api/notifications/${user.id}`);
+        const dbNotifications = allNotifyRes.data.notifications || [];
+        
+        // Filter unread notifications
+        const unreadNotifications = dbNotifications.filter(n => !n.isRead);
+        setNotification(unreadNotifications);
+        
+        // Sync with localStorage (store notification count only)
+        localStorage.setItem("unreadNotificationCount", notificationCount.toString());
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
+    };
+    
+    loadUnreadCount();
 
+    // Listen for reset event from Notifications page
+    const handleReset = () => {
+      loadUnreadCount(); // Re-fetch to get updated count
+    };
+    window.addEventListener('resetNotificationCount', handleReset);
+    window.addEventListener('resetMessageCount', handleReset); // Also listen for message count reset
+
+    // Removed 30s polling - Socket events will handle real-time updates
+
+    return () => {
+      window.removeEventListener('resetNotificationCount', handleReset);
+    };
+  }, [user?.id, axiosPublic]);
+
+  // Socket is now managed globally via SocketContext
+  // Listen for notifications using global socket
   useEffect(() => {
-    const newSocket = io("https://flybook.com.bd", {
-      transports: ["websocket"],
-      withCredentials: true,
-    });
-    setSocket(newSocket);
-    newSocket.on("connect", () => {
-      newSocket.emit("joinUser", user.id);
-    });
-    newSocket.on("receiveNotify", (data) => {
+    if (!socket) return;
+
+    socket.on("receiveNotify", (data) => {
       console.log("New Notification:", data);
+      // Add to unread notifications
       setNotification((prevNotifications) =>
         Array.isArray(prevNotifications) ? [...prevNotifications, data] : [data]
       );
-      const existingNotifications =
-        JSON.parse(localStorage.getItem("notify")) || [];
-      const updatedNotifications = [...existingNotifications, data];
-      localStorage.setItem("notify", JSON.stringify(updatedNotifications));
+      
+      // Refresh notification count from database (only notification, not message)
+      const refreshNotificationCount = async () => {
+        if (!user?.id) return;
+        try {
+          const notifyRes = await axiosPublic.get(`/api/notifications/${user.id}/unread-count`);
+          const notifyCount = notifyRes.data.unreadCount || 0;
+          setUnreadNotificationCount(notifyCount);
+          localStorage.setItem("unreadNotificationCount", notifyCount.toString());
+        } catch (error) {
+          console.error("Error refreshing notification count:", error);
+        }
+      };
+      refreshNotificationCount();
     });
 
-    return () => newSocket.disconnect(); // ক্লিনআপ
-  }, []);
+    return () => {
+      socket.off("receiveNotify");
+    };
+  }, [socket, user?.id, axiosPublic]);
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -101,7 +154,7 @@ const DownNav = () => {
     let uploadedImageUrl = "";
     let uploadedPdfUrl = "";
 
-    // First, upload the image to ImgBB
+    // Upload the image to ImgBB if provided (optional)
     if (image) {
       const formData = new FormData();
       formData.append("image", image);
@@ -118,15 +171,21 @@ const DownNav = () => {
         const result = await response.json();
         if (result.success) {
           uploadedImageUrl = result.data.url;
+          toast.success("Image uploaded successfully");
         } else {
           toast.error("Image upload failed");
+          setPostLoading(false);
+          return;
         }
       } catch (error) {
         console.error("Error uploading image:", error);
+        toast.error("Image upload failed");
+        setPostLoading(false);
+        return;
       }
     }
 
-    // Upload PDF to Cloudinary if exists
+    // Upload PDF to Cloudinary if provided (optional)
     if (pdf) {
       const formData = new FormData();
       formData.append("file", pdf);
@@ -144,18 +203,22 @@ const DownNav = () => {
         const result = await response.json();
         if (result.secure_url) {
           uploadedPdfUrl = result.secure_url;
+          toast.success("PDF uploaded successfully");
         } else {
           toast.error("PDF upload failed");
+          setPostLoading(false);
+          return;
         }
       } catch (error) {
         console.error("Error uploading PDF:", error);
         toast.error("PDF upload failed");
+        setPostLoading(false);
+        return;
       }
     }
 
     setImageUrl(uploadedImageUrl);
     setPdfUrl(uploadedPdfUrl);
-    setPostLoading(false);
     const currentDate = new Date().toLocaleDateString();
     const currentTime = new Date().toLocaleTimeString();
     const postData = {
@@ -215,16 +278,36 @@ const DownNav = () => {
             </h1>
             <form onSubmit={handleSubmit}>
               <label
+                htmlFor="message"
+                className="block mb-2 text-sm font-medium text-gray-800 "
+              >
+                Your Opinion *
+              </label>
+              <textarea
+                id="message"
+                rows="4"
+                required
+                className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Write your thoughts here..."
+                value={opinion}
+                onChange={handleOpinionChange}
+              ></textarea>
+
+              <label
                 className="block mb-2 text-sm mt-3 font-medium text-gray-800"
                 htmlFor="file_input"
               >
-                Select Image
+                Select Image (Optional)
               </label>
               <input
                 type="file"
+                accept="image/*"
                 className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
                 onChange={handleFileChange}
               />
+              {image && (
+                <p className="text-xs text-green-600 mt-1">✓ Image selected: {image.name}</p>
+              )}
 
               <label
                 className="block mb-2 text-sm mt-3 font-medium text-gray-800"
@@ -232,33 +315,19 @@ const DownNav = () => {
               >
                 Select PDF (Optional)
               </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  id="pdf_input"
-                  accept=".pdf"
-                  className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
-                  onChange={handlePdfChange}
-                />
-                {pdf && (
-                  <FaFilePdf className="text-red-500 text-2xl" title={pdf.name} />
-                )}
-              </div>
-
-              <label
-                htmlFor="message"
-                className="block mb-2 mt-4 text-sm font-medium text-gray-800 "
-              >
-                Your Opinion
-              </label>
-              <textarea
-                id="message"
-                rows="4"
-                className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Write your thoughts here..."
-                value={opinion}
-                onChange={handleOpinionChange}
-              ></textarea>
+              <input
+                type="file"
+                id="pdf_input"
+                accept=".pdf"
+                className="w-full text-gray-500 font-medium text-sm border-2 bg-gray-100 file:cursor-pointer cursor-pointer file:border-0 file:py-2 file:px-4 file:mr-4 file:bg-gray-800 file:hover:bg-gray-700 file:text-white rounded"
+                onChange={handlePdfChange}
+              />
+              {pdf && (
+                <div className="flex items-center gap-2 mt-1">
+                  <FaFilePdf className="text-red-500 text-lg" />
+                  <p className="text-xs text-green-600">✓ PDF selected: {pdf.name}</p>
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -322,9 +391,11 @@ const DownNav = () => {
           >
             <IoNotificationsSharp />
           </NavLink>
-          <p className=" absolute top-[-5px] right-0 bg-red-700 text-white px-[2px] rounded-xl text-sm">
-            {notification.length}
-          </p>
+          {unreadNotificationCount > 0 && (
+            <p className=" absolute top-[-5px] right-0 bg-red-700 text-white px-[2px] rounded-xl text-sm min-w-[18px] text-center">
+              {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+            </p>
+          )}
         </li>
         <li>
           <NavLink

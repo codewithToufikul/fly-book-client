@@ -6,7 +6,7 @@ const useCategories = () => {
   const { data: categories = [], refetch, isLoading, isError, error } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:3000/home-category");
+      const res = await axios.get("https://fly-book-server-lzu4.onrender.com/home-category");
       return res.data.categories;
     },
     onError: (err) => {

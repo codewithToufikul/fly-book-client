@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+
 import { MdAvTimer } from "react-icons/md";
 import useAllBook from "../../Hooks/useAllBook";
 import useUser from "../../Hooks/useUser";
 import { Link } from "react-router";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import createSocket from "../../utils/socket";
 
 const MyRequestBook = () => {
   const { allBooks, isLoading, refetch } = useAllBook();
@@ -13,7 +14,16 @@ const MyRequestBook = () => {
   const token = localStorage.getItem("token");
   const axiosPublic = usePublicAxios();
   const [reLoad, setReLoad] = useState(false);
-  const socket = io("https://flybook.com.bd");
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -56,15 +66,17 @@ const MyRequestBook = () => {
         toast.success("Book return Success!");
         setReLoad(false);
         refetch();
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: ownerId,
-          type: "bookReturn",
-          notifyText: "Return Your Book Request",
-          roomId: [ownerId],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: ownerId,
+            type: "bookReturn",
+            notifyText: "Return Your Book Request",
+            roomId: [ownerId],
+          });
+        }
       }
     } catch (error) {
       console.error("Error while return the book:", error);

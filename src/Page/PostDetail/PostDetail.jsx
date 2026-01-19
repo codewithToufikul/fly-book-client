@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import useUser from "../../Hooks/useUser";
 import { FaRegHeart, FaFilePdf, FaShare, FaCopy, FaArrowLeft } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
-import Linkify from "linkify-react";
+import Linkify from "react-linkify";
 import { franc } from 'franc-min';
 
 const PostDetail = () => {
@@ -79,23 +79,23 @@ const PostDetail = () => {
     setTargetLang(languageMap[countryCode] || "eng_Latn");
   };
 
-const { isLoading, error, data: post } = useQuery({
-  queryKey: ["postDetail", postId],
-  queryFn: () =>
-    axiosPublic.get(`/opinion/posts/${postId}`).then((res) => res.data.data), // Changed from /opinion/post/ to /opinion/posts/
-});
+  const { isLoading, error, data: post } = useQuery({
+    queryKey: ["postDetail", postId],
+    queryFn: () =>
+      axiosPublic.get(`/opinion/posts/${postId}`).then((res) => res.data.data), // Changed from /opinion/post/ to /opinion/posts/
+  });
 
   const handleTranslate = async () => {
     if (!post) return;
-    
+
     const detectedLang = franc(post.description);
     const targetLangCode = targetLang.split("_")[0];
-    
+
     if (detectedLang === targetLangCode) {
       toast.success("The post is already in your language.");
       return;
     }
-    
+
     if (translatedText) {
       setShowTranslated(!showTranslated);
       return;
@@ -105,7 +105,7 @@ const { isLoading, error, data: post } = useQuery({
     toast.loading(<div style={loadingTextStyle}>AI Translating...</div>, {
       duration: 2000,
     });
-    
+
     try {
       const response = await axiosPublic.post("/api/translate", {
         text: post.description,
@@ -123,7 +123,7 @@ const { isLoading, error, data: post } = useQuery({
       console.error("Translation error:", error);
       toast.error(
         error.response?.data?.error ||
-          "Translation failed. Please try again later."
+        "Translation failed. Please try again later."
       );
     } finally {
       setTranslating(false);
@@ -193,7 +193,7 @@ const { isLoading, error, data: post } = useQuery({
 
   const submitComment = async () => {
     if (!newComment.trim()) return;
-    
+
     setSubmittingComment(true);
     try {
       const response = await axiosPublic.post(
@@ -244,8 +244,8 @@ const { isLoading, error, data: post } = useQuery({
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Back button */}
-        <Link 
-          to="/public-opinion" 
+        <Link
+          to="/public-opinion"
           className="flex items-center gap-2 text-blue-500 hover:text-blue-700 mb-6"
         >
           <FaArrowLeft /> Back to Feed
@@ -273,9 +273,8 @@ const { isLoading, error, data: post } = useQuery({
               <div>
                 <h1 className="text-xl font-medium">{post.userName}</h1>
                 <p className="text-sm text-slate-400">
-                  {`${post.date} at ${
-                    post.time.slice(0, -6) + post.time.slice(-3)
-                  }`}
+                  {`${post.date} at ${post.time.slice(0, -6) + post.time.slice(-3)
+                    }`}
                 </p>
               </div>
             </Link>

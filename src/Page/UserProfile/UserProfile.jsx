@@ -16,7 +16,7 @@ import { IoIosMail, IoMdPersonAdd } from "react-icons/io";
 import { useQuery } from "@tanstack/react-query";
 import usePublicAxios from "../../Hooks/usePublicAxios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { useSocket } from "../../contexts/SocketContext";
 
 const UserProfile = () => {
   const { user: myData, loading: userLoading, refetch } = useUser();
@@ -27,7 +27,31 @@ const UserProfile = () => {
   const [expandedPosts, setExpandedPosts] = useState({});
   const [isUserFound, setIsUserFound] = useState(false);
   const [userAt, setUserAt] = useState(null);
-  const socket = io("https://api.flybook.com.bd");
+  const socket = useSocket(); // Use global socket
+  const [isUserOnline, setIsUserOnline] = useState(false);
+
+  // Listen for user online/offline status using global socket
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for user online/offline status
+    socket.on("userOnline", (data) => {
+      if (data.userId === userId) {
+        setIsUserOnline(true);
+      }
+    });
+
+    socket.on("userOffline", (data) => {
+      if (data.userId === userId) {
+        setIsUserOnline(false);
+      }
+    });
+
+    return () => {
+      socket.off("userOnline");
+      socket.off("userOffline");
+    };
+  }, [socket, userId]);
 
   const toggleExpand = (id) => {
     setExpandedPosts((prev) => ({
@@ -53,6 +77,8 @@ const UserProfile = () => {
       if (foundUser) {
         setUserAt(foundUser);
         setIsUserFound(true);
+        // Set initial online status
+        setIsUserOnline(foundUser.isOnline || false);
       }
     }
   }, [peoples, userId]);
@@ -125,15 +151,17 @@ const UserProfile = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("request sent !");
-      socket.emit("sendRequest", {
-        senderId: myData.id,
-        senderName: myData.name,
-        senderProfile: myData.profileImage,
-        receoientId: userId,
-        type: "fndReq",
-        notifyText: "Send Friend Request",
-        roomId: [userId],
-      });
+      if (socket) {
+        socket.emit("sendRequest", {
+          senderId: myData.id,
+          senderName: myData.name,
+          senderProfile: myData.profileImage,
+          receoientId: userId,
+          type: "fndReq",
+          notifyText: "Send Friend Request",
+          roomId: [userId],
+        });
+      }
       refetch();
     } catch (error) {
       console.log(error);
@@ -149,15 +177,17 @@ const UserProfile = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Request Accepted !");
-      socket.emit("sendRequest", {
-        senderId: myData.id,
-        senderName: myData.name,
-        senderProfile: myData.profileImage,
-        receoientId: userId,
-        type: "fndReq",
-        notifyText: "Friend Request Accept",
-        roomId: [userId],
-      });
+      if (socket) {
+        socket.emit("sendRequest", {
+          senderId: myData.id,
+          senderName: myData.name,
+          senderProfile: myData.profileImage,
+          receoientId: userId,
+          type: "fndReq",
+          notifyText: "Friend Request Accept",
+          roomId: [userId],
+        });
+      }
       refetch();
     } catch (error) {
       console.log(error);
@@ -222,6 +252,11 @@ const UserProfile = () => {
                   alt="Profile"
                   className="w-full h-full object-cover rounded-full"
                 />
+                {isUserOnline ? (
+                  <div className="absolute bottom-2 right-2 lg:bottom-3 lg:right-3 w-4 h-4 bg-green-500 rounded-full border-4 border-white"></div>
+                ) : (
+                  <div className="absolute bottom-2 right-2 lg:bottom-3 lg:right-3 w-4 h-4 bg-gray-400 rounded-full border-4 border-white"></div>
+                )}
               </div>
               <div className="">
                 <h1 className="text-lg lg:text-3xl font-semibold">

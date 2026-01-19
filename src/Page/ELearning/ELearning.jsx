@@ -59,7 +59,7 @@ function ELearning() {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const res = await fetch('http://localhost:3000/api/courses');
+        const res = await fetch('https://fly-book-server-lzu4.onrender.com/api/courses');
         const data = await res.json();
         setCourses(data);
         setFilteredCourses(data);

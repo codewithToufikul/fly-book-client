@@ -9,7 +9,7 @@ const ViewAiPost = () => {
   const { isLoading, error, data, refetch } = useQuery({
     queryKey: ["aiPostData"],
     queryFn: () =>
-      fetch(`http://localhost:3000/admin/post-ai/${id}`).then((res) => res.json()),
+      fetch(`https://fly-book-server-lzu4.onrender.com/admin/post-ai/${id}`).then((res) => res.json()),
   });
 
   const componentDecorator = (href, text, key) => (

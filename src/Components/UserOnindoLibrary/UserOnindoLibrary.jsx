@@ -4,15 +4,25 @@ import useAllOnindoBook from "../../Hooks/useAllOnindoBook";
 import useUser from "../../Hooks/useUser";
 import toast from "react-hot-toast";
 import usePublicAxios from "../../Hooks/usePublicAxios";
-import { io } from "socket.io-client";
+import { useEffect, useState } from "react";
+import createSocket from "../../utils/socket";
 
 const UserOnindoLibrary = () => {
   const { userId } = useParams();
   const {user, loading} = useUser();
   const axiosPublic = usePublicAxios();
   const token = localStorage.getItem("token");
-  const socket = io("https://flybook.com.bd");
+  const [socket, setSocket] = useState(null);
   const { allOnindoBooks, refetch, isLoading } = useAllOnindoBook();
+
+  useEffect(() => {
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
   if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -45,15 +55,17 @@ const UserOnindoLibrary = () => {
 
       if (response.status === 200) {
         toast.success("Book request successfully!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: userId,
-          type: "bookReqOnindo",
-          notifyText: "Send a Book Request",
-          roomId: [userId],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: userId,
+            type: "bookReqOnindo",
+            notifyText: "Send a Book Request",
+            roomId: [userId],
+          });
+        }
         refetch()
       }
     } catch (error) {
@@ -98,15 +110,17 @@ const UserOnindoLibrary = () => {
 
       if (response.status === 200) {
         toast.success("Book request Canceled!");
-        socket.emit("sendRequest", {
-          senderId: user.id,
-          senderName: user.name,
-          senderProfile: user.profileImage,
-          receoientId: userId,
-          type: "bookReqOnindo",
-          notifyText: "Cancel Book Request",
-          roomId: [userId],
-        });
+        if (socket) {
+          socket.emit("sendRequest", {
+            senderId: user.id,
+            senderName: user.name,
+            senderProfile: user.profileImage,
+            receoientId: userId,
+            type: "bookReqOnindo",
+            notifyText: "Cancel Book Request",
+            roomId: [userId],
+          });
+        }
         refetch()
       }
     } catch (error) {

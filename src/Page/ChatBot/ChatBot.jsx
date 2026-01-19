@@ -2,14 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Trash2, Download } from 'lucide-react';
 
 function ChatBot() {
-  // Gemini API key
-  const API_KEY = 'AIzaSyC17918PXDz6EyER6FstVOQ-tY02VO5TkE';
-  
+  // Groq API key
+  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
   const [messages, setMessages] = useState([
     {
       id: 1,
       role: 'assistant',
-      content: 'Hello! I\'m your AI assistant . How can I help you today?',
+      content: 'Hello! I\'m your AI assistant powered by Groq. How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -43,51 +43,33 @@ function ChatBot() {
     setIsLoading(true);
 
     try {
-      // Build conversation history for Gemini
+      // Build conversation history for Groq
       const conversationHistory = messages
         .filter(msg => msg.role !== 'assistant' || msg.id !== 1) // Exclude initial greeting
         .map(msg => ({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }]
+          role: msg.role,
+          content: msg.content
         }));
 
       // Add current user message
       conversationHistory.push({
         role: 'user',
-        parts: [{ text: currentInput }]
+        content: currentInput
       });
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
-          contents: conversationHistory,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          },
-          safetySettings: [
-            {
-              category: "HARM_CATEGORY_HARASSMENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_HATE_SPEECH",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            }
-          ]
+          model: 'llama-3.3-70b-versatile', // Groq's fastest and most capable model
+          messages: conversationHistory,
+          temperature: 0.7,
+          max_tokens: 2048,
+          top_p: 0.95,
+          stream: false
         })
       });
 
@@ -97,15 +79,15 @@ function ChatBot() {
       }
 
       const data = await response.json();
-      
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-        throw new Error('Invalid response format from Gemini API');
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response format from Groq API');
       }
 
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: data.candidates[0].content.parts[0].text,
+        content: data.choices[0].message.content,
         timestamp: new Date()
       };
       console.log(assistantMessage)
@@ -129,7 +111,7 @@ function ChatBot() {
       {
         id: 1,
         role: 'assistant',
-        content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
+        content: 'Hello! I\'m your AI assistant powered by Groq. How can I help you today?',
         timestamp: new Date()
       }
     ]);
@@ -141,7 +123,7 @@ function ChatBot() {
       content: msg.content,
       timestamp: msg.timestamp.toISOString()
     }));
-    
+
     const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -175,8 +157,8 @@ function ChatBot() {
               <h1 className="text-xl font-bold text-white">ChatBot</h1>
             </div>
           </div>
-          
-          <div className="flex space-x-2"> 
+
+          <div className="flex space-x-2">
             <button
               onClick={clearChat}
               className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -197,17 +179,15 @@ function ChatBot() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`flex max-w-3xl ${
-                  message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                }`}
+                className={`flex max-w-3xl ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                  }`}
               >
                 <div className={`flex-shrink-0 ${message.role === 'user' ? 'ml-3' : 'mr-3'}`}>
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      message.role === 'user'
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${message.role === 'user'
                         ? 'bg-gradient-to-r from-blue-500 to-purple-500'
                         : 'bg-gradient-to-r from-green-500 to-teal-500'
-                    }`}
+                      }`}
                   >
                     {message.role === 'user' ? (
                       <User className="w-4 h-4 text-white" />
@@ -216,27 +196,25 @@ function ChatBot() {
                     )}
                   </div>
                 </div>
-                
+
                 <div
-                  className={`px-4 py-3 rounded-2xl backdrop-blur-lg ${
-                    message.role === 'user'
+                  className={`px-4 py-3 rounded-2xl backdrop-blur-lg ${message.role === 'user'
                       ? 'bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white'
                       : 'bg-white/10 text-gray-100 border border-white/10'
-                  }`}
+                    }`}
                 >
                   <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
                     {message.content}
                   </div>
-                  <div className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
-                  }`}>
+                  <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                    }`}>
                     {formatTimestamp(message.timestamp)}
                   </div>
                 </div>
               </div>
             </div>
           ))}
-          
+
           {isLoading && (
             <div className="flex justify-start">
               <div className="flex mr-3">
@@ -252,7 +230,7 @@ function ChatBot() {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
       </div>
