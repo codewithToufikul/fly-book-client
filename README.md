@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Fly-Book Logo](https://via.placeholder.com/200x200?text=Fly-Book)
+![Fly-Book Logo](https://i.ibb.co.com/VjWkST4/logo.png)
 
 **A comprehensive full-stack platform combining Social Networking, E-Learning, E-Commerce, Job Marketplace, and Community Management**
 
